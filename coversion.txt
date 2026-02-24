@@ -1,0 +1,644 @@
+想做一個程式，內容是融合健身跟寶可夢。 每次訓練都是一次道館賽。招式變成動作，打贏戰鬥才能升級使用新的招式(動作） 每次訓練至少會遇到三個對手，小弟（熱身），中boss(容量組），道館主（最大重量組～3-5rm ）。 動作的目標肌群當作屬性，對手也有相對的克制屬性，按照訓練頻率給定。例如：一週三練以下就是每次練全身胸背腿肩，三練以上可以三分化/五分化，目標是一週刺激同一肌群兩次。 先用這個大綱幫我產生一份spec.md 有什麼想法可以再討論，配樂跟圖片幫我找寶可夢相關的資料，對戰音樂之類來源幫我列出來
+Gemini said
+這個想法非常有趣！將枯燥的健身數據轉化為 RPG 的戰鬥數值，能極大地增加持續訓練的動力。尤其是將「熱身、容量、大重量」對應到「小怪、中 Boss、館主」的節奏感設計得非常好。
+
+以下我為您整理的 spec.md 規格書草案，以及後續的開發建議與素材來源。
+
+專案規格書 (Spec.md)
+
+Markdown
+# Project: PokéGym (暫定名稱：肌力道館) - Gamified Fitness RPG
+
+## 1. 專案概述 (Overview)
+本專案旨在開發一款結合健身訓練與 RPG 回合制戰鬥的應用程式。用戶的每一次健身訓練 (Workout Session) 被視為一次道館挑戰 (Gym Battle)。透過完成真實世界的健身動作對敵人造成傷害，目標是擊敗道館主並收集/升級新的動作技能。
+
+## 2. 核心機制 (Core Mechanics)
+
+### 2.1 戰鬥流程 (The Battle Loop)
+每次訓練 (Session) 定義為一場戰鬥，包含三個階段：
+
+1.  **階段一：遇見小弟 (Minion Phase) - 熱身 (Warm-up)**
+    * **目標：** 喚醒肌肉，準備關節。
+    * **設定：** 低血量 (HP)，低攻擊力。
+    * **訓練內容：** 輕重量、動態伸展或低強度的複合動作。
+    * **勝利條件：** 完成指定熱身組數。
+
+2.  **階段二：中 Boss (Mid-Boss) - 容量期 (Hypertrophy/Volume)**
+    * **目標：** 累積訓練量，肌肥大。
+    * **設定：** 高血量 (HP)，需持續輸出來磨血。
+    * **訓練內容：** 中等重量 (8-12 RM)，多組數。
+    * **勝利條件：** 完成總容量 (Volume = 重量 x 次數 x 組數) 達標。
+
+3.  **階段三：道館主 (Gym Leader) - 力量期 (Strength/Max Effort)**
+    * **目標：** 神經徵招，突破 PR (個人最佳成績)。
+    * **設定：** 極高防禦力，需高爆發傷害 (Critical Hit) 才能破防。
+    * **訓練內容：** 大重量 (3-5 RM)。
+    * **勝利條件：** 在力竭前完成大重量組，或成功突破 1RM。
+
+### 2.2 屬性系統 (Attribute System)
+將肌群映射為寶可夢屬性，建立相剋關係 (Type Effectiveness)：
+
+* **胸 (Chest) = 火 (Fire):** 爆發推力。
+    * *克制:* 草 (Grass - 也就是對手是草系，需用胸部動作攻擊)。
+* **背 (Back) = 水 (Water):** 流暢拉力。
+    * *克制:* 火 (Fire)。
+* **腿 (Legs) = 岩石/地面 (Rock/Ground):** 穩固根基。
+    * *克制:* 電 (Electric)。
+* **肩 (Shoulders) = 電 (Electric):** 快速傳導。
+    * *克制:* 飛行 (Flying)。
+* **核心/其他 (Core/Arms) = 格鬥/一般 (Fighting/Normal):** 輔助與連結。
+
+> **戰鬥邏輯：** 若今日課表為「練胸」，系統會生成「草系」或「鋼系」的道館主，迫使玩家使用「火系招式 (臥推)」來取得 `2x` 傷害加成。
+
+### 2.3 招式與升級 (Moves & Progression)
+* **招式 (Moves):** 即具體的健身動作 (如：槓鈴臥推、啞鈴划船)。
+* **解鎖機制 (Unlocking):**
+    * 玩家初始只有基礎招式 (如：伏地挺身、徒手深蹲)。
+    * 擊敗道館主可獲得 `EXP` 和 `招式機 (TM)`。
+    * 等級提升或使用招式機可解鎖進階動作 (如：伏地挺身 -> 槓鈴臥推 -> 啞鈴上斜臥推)。
+* **傷害計算 (Damage Calculation):**
+    $$Damage = (Weight \times Reps) \times (1 + AttributeBonus)$$
+
+## 3. 訓練排程演算法 (Scheduler Algorithm)
+
+系統根據用戶輸入的「每週訓練頻率」自動生成對手與屬性：
+
+* **頻率 < 3次/週 (Low Frequency):**
+    * **模式：** 全身訓練 (Full Body)。
+    * **對手陣容：** 混合屬性隊伍 (Mixed Types)。
+    * **流程：** 需切換不同屬性招式 (胸 -> 背 -> 腿) 才能有效擊敗對手。
+
+* **頻率 >= 3次/週 (High Frequency):**
+    * **模式：** 分化訓練 (Split Routine - Push/Pull/Legs 或 五分化)。
+    * **邏輯：** 確保同一肌群 (屬性) 每週至少被刺激兩次。
+    * **範例 (三分化):**
+        * Day 1: 推 (胸/肩/三頭) -> 對戰「草/蟲」系道館。
+        * Day 2: 拉 (背/二頭) -> 對戰「火/岩」系道館。
+        * Day 3: 腿 -> 對戰「電」系道館。
+        * Day 4: 休 (寶可夢中心恢復)。
+        * Day 5: 循環 Day 1。
+
+## 4. UI/UX 需求 (Requirements)
+* **主畫面：** 顯示玩家角色、當前等級、道館地圖。
+* **戰鬥畫面：**
+    * 上方：Boss 圖像、HP 條、屬性。
+    * 下方：玩家動作選擇 (卡牌形式)、當前組數/重量輸入框。
+* **結算畫面：** 獲得經驗值動畫、升級提示、新動作解鎖通知。
+
+## 5. 技術堆疊建議 (Tech Stack)
+* Frontend: Flutter or React Native (跨平台)。
+* Backend: Firebase (或是 Supabase) 處理用戶數據與進度存檔。
+* Game Engine (Optional): 若需要華麗特效，可考慮 Unity (2D)。
+
+💡 進一步的設計討論 (Brainstorming)
+
+為了讓這款 App 更好玩，我有幾個延伸想法：
+
+力竭機制 (Failure Mechanics):
+
+如果你在某一組做不到預定次數（力竭），可以判定為「招式未命中 (Miss)」或是「被 Boss 反擊扣血」。
+
+如果玩家 HP 歸零，戰鬥失敗，只能獲得一半經驗值。
+
+補給品系統 (Items):
+
+傷藥 (Potion): 組間休息時間。喝傷藥 = 延長休息時間 (但會影響戰鬥評價)。
+
+PP (招式次數): 代表體能。若 PP 耗盡 (體力透支)，需要「PP 回復劑」 (如：攝取 BCAA 或 碳水)。
+
+神奇糖果 (Rare Candy): 可以在現實中吃欺騙餐 (Cheat Meal) 或蛋白粉來獲得。
+
+多人連線/團體戰 (Raid Battle):
+
+週末可以設定「神獸降臨」（如：超高總容量的挑戰）。
+
+你可以邀請朋友一起「合力輸出」，大家把自己當天的訓練量加總來擊敗超夢。
+
+圖鑑系統 (Pokedex):
+
+收集不是寶可夢，而是「動作圖鑑」。解鎖越難的動作（如：人體國旗、2倍體重深蹲），圖鑑越稀有。
+
+🎵 音樂與圖片素材來源建議
+
+由於任天堂 (Nintendo) 對版權非常嚴格，若您打算上架 App Store，絕對不能直接使用官方的圖片或音樂。建議使用「風格相近」的素材。
+
+1. 音樂 (BGM / SFX)
+
+你需要的是 8-bit / Chiptune 或 JRPG Orchestral 風格的音樂。
+
+風格參考 (YouTube 搜尋關鍵字):
+
+Pokemon Battle Music Theme
+
+Gym Leader Theme Remix
+
+8-bit Battle Music Royalty Free
+
+合法素材來源 (Royalty Free / Creative Commons):
+
+Opengameart.org: 搜尋 "JRPG Battle" 或 "8-bit"，有很多免費的戰鬥音樂。
+
+Peritune: 日本免費音樂素材網，有很多 RPG 風格音樂。
+
+Maoudamashii (魔王魂): 非常知名的日本遊戲音樂素材，戰鬥曲風很熱血。
+
+知名同人音樂 (僅供開發測試或個人使用，不可商用):
+
+GlitchxCity (YouTube): 製作非常多高品質的寶可夢 Remix。
+
+Zame (YouTube): 擅長重製各代寶可夢音樂。
+
+2. 圖片 (Visuals / Sprites)
+
+同樣建議使用「像素風 (Pixel Art)」來致敬，但角色設計要原創。
+
+風格參考:
+
+The Spriters Resource: 這裡有所有寶可夢的原始圖檔（僅供參考學習結構與配色，嚴禁直接使用）。
+
+開發用素材 (合法來源):
+
+Itch.io (Game Assets): 搜尋 "Monster Sprites" 或 "Pixel Art Monsters"。有很多獨立畫師販售或免費提供類似寶可夢的怪獸包。
+
+推薦關鍵字：Creature Mixer (可以自己組合怪獸部件)。
+
+Kenny Assets: 提供免費且可商用的通用遊戲素材（UI、圖示）。
+
+下一步
+
+這份 Spec 是一個很好的起點。如果你覺得這個方向可以：
+
+您希望我針對「傷害公式的數值平衡（如何讓新手跟老手都能玩）」進行更詳細的設計，還是先幫您用 Python 寫一個簡單的「文字版戰鬥模擬器」來驗證這個遊戲迴圈好不好玩？
+
+You said
+你的延伸想法很有趣，幫我4個想法都加入spec。我還想到可以要求玩家情況允許的話讓我們實時取得穿戴裝置的心率數據，加入傷害判斷的標準。
+傷害公式平衡必須要求玩家輸入當前指標動作的5rm 數值當作基準, 漸進超負荷才是鍛鍊的基礎。
+但這點很好，不是每個人的目標都是最大肌力，可以先幫我做不同的道館，訓練要求分為最大肌力跟肌肥大，就是有力量訓練多一點還是容量。 剩下比如說強調柔軟度度選美大會或是肌肉控制的瑜伽大賽之類可以先幫我放到後面。
+Gemini said
+這是一個非常關鍵的迭代！引入 5RM（5 Rep Max，最大重複次數為5下的重量） 作為基準，將遊戲的核心從「單純比數字大小」轉變為「比拼相對強度與進步幅度」。這確保了這款 App 是真正遵循 漸進式超負荷 (Progressive Overload) 原則的嚴肅訓練工具，而不僅僅是個遊戲。
+
+同時，加入心率數據作為「爆擊率/屬性加成」的判定，能完美結合穿戴裝置的優勢。
+
+以下是為您更新後的 Spec v2.0，我將您的新需求與之前的延伸想法都整合進去了。
+
+Project: PokéGym (肌力道館) - Spec v2.0
+
+Markdown
+# Project: PokéGym (暫定) - Gamified Progressive Overload RPG
+
+## 1. 專案概述 (Overview)
+一款結合漸進式超負荷訓練原則 (Progressive Overload) 與 RPG 回合制戰鬥的 App。
+核心理念：**「訓練即戰鬥，進步即升級」**。
+系統利用穿戴裝置的心率數據與用戶的 5RM 基準值，計算「相對戰鬥力」，讓新手與老手都能在各自的水平上享受挑戰。
+
+## 2. 核心機制 (Core Mechanics)
+
+### 2.1 角色狀態與基準 (Base Stats & Benchmark)
+* **基準設定 (Calibration):**
+    * 玩家初次遊玩需輸入核心動作 (如深蹲、臥推、硬舉) 的 **5RM (5 Rep Max)** 數值。
+    * **5RM** 代表玩家當前的「攻擊力上限」。
+* **漸進式超負荷 (Overload):**
+    * 若玩家在訓練中成功突破原有的 5RM (例如原本 100kg 做 5 下，今天做了 6 下或加重到 102.5kg)，系統判定為「進化 (Evolution)」，提升角色基礎攻擊力，並更新 5RM 數據。
+
+### 2.2 戰鬥流程 (The Battle Loop)
+每次訓練 (Session) 是一次道館挑戰，根據玩家目標選擇不同類型的道館：
+
+#### A. 力量道館 (Titan's Gym) - 最大肌力取向
+* **特徵：** 敵人數量少，防禦極高 (High DEF)。
+* **勝利條件：** 單發傷害 (Single Hit Damage) 必須超過敵人防禦值才能造成傷害。
+* **適合訓練：** 大重量、低次數 (1-5 Reps)、長休息。
+* **對應指標：** 強度 (% of 1RM) > 總容量。
+
+#### B. 體格道館 (Colossus Gym) - 肌肥大/容量取向
+* **特徵：** 敵人血量極厚 (Massive HP)，但防禦普通。
+* **勝利條件：** 在回合限制內 (時間限制)，累積足夠的總傷害 (Total Damage)。
+* **適合訓練：** 中重量、中高次數 (8-12+ Reps)、短休息。
+* **對應指標：** 總容量 (Volume) > 強度。
+
+#### *[Backlog] 未來擴充道館*
+* **選美大會 (Contest Hall):** 強調柔軟度與伸展 (Flexibility)。
+* **瑜珈塔 (Zen Tower):** 強調肌肉控制與核心穩定 (Stability)。
+
+### 2.3 傷害公式 v2.0 (Balanced Damage Formula)
+為了平衡不同量級的玩家，傷害不再只看絕對重量，而是看「相對強度」。
+
+$$BaseDamage = \left( \frac{\text{ActualWeight}}{\text{User5RM}} \right) \times \text{Reps} \times \text{LevelMultiplier}$$
+
+* **說明：**
+    * 如果你用 5RM 的重量做了 5 下，係數為 $1 \times 5 = 5$ (標準高傷)。
+    * 如果你用 50% 的重量做了 10 下，係數為 $0.5 \times 10 = 5$ (總傷相同，但單發傷害低，打不動力量型 BOSS)。
+
+### 2.4 心率同步系統 (Heart Rate Sync - Critical Hit)
+利用穿戴裝置 (Apple Watch/Garmin) 的即時心率作為「爆擊」與「屬性」判定：
+
+* **Zone 2 (燃脂區):** 穩定傷害，無加成。
+* **Zone 3-4 (無氧耐力區):** **爆擊率 (Crit Rate) +30%**。
+* **Zone 5 (紅區):** 發動 **「極巨化 (Dynamax)」** 攻擊，傷害翻倍，但每回合扣減自身 PP (體力)。
+* **判定邏輯：** 系統偵測到一組動作結束後的「峰值心率」來結算該回合傷害加成。
+
+## 3. 延伸遊戲系統 (Extended Features)
+
+### 3.1 狀態異常與力竭 (Status Effects & Failure)
+* **力竭 (Failure):** 若該組未達目標次數（例如目標 10 下只做 6 下），判定為「招式未命中 (Miss)」或「被 Boss 反擊 (Counter)」，玩家扣血 (HP)。
+* **受傷 (Injury Risk):** 若心率長期處於 Zone 5 且姿勢不穩 (需未來整合動態捕捉)，玩家陷入「混亂」狀態，命中率大幅下降。
+
+### 3.2 道具系統 (Items)
+* **傷藥 (Potion):** 延長組間休息時間而不降低戰鬥評價。
+* **PP 回復劑 (Ether):** 攝取 BCAA/碳水飲品 (需手動確認)，回復戰鬥體力。
+* **神奇糖果 (Rare Candy):** 透過攝取高蛋白餐或欺騙餐 (Cheat Meal) 獲得，可用於升級特定招式等級。
+
+### 3.3 招式圖鑑 (Move Pokedex)
+* 將健身動作收集化。
+* **解鎖條件：**
+    * *一般動作:* 等級提升解鎖。
+    * *稀有動作 (如：人體國旗、暴力上槓):* 需擊敗特定活動 Boss 或達成特定體重比 (如：深蹲 2 倍體重) 解鎖。
+
+### 3.4 團體戰 (Raid Battles)
+* **週末活動：** 出現超高血量的「傳說寶可夢」。
+* **機制：** 允許組隊。你與朋友當天的總訓練容量 (Total Volume) 加總來扣減 Boss 血量。
+
+## 4. UI/UX 需求 (Requirements)
+* **Onboarding:** 5RM 測驗與輸入介面。
+* **戰鬥畫面 HUD:**
+    * 顯示即時心率 (Heart Rate) 與區間顏色。
+    * 顯示預估傷害值 (根據當前輸入重量預算)。
+* **資料整合:** Apple HealthKit / Google Fit API 串接。
+
+## 5. 技術規格 (Tech Specs)
+* **Frontend:** Flutter (便於串接原生 HealthKit/GoogleFit)。
+* **Backend:** Firebase (Realtime Database 用於團體戰同步)。
+* **Integrations:**
+    * iOS: HealthKit (Heart Rate, Workout Sessions).
+    * Android: Health Connect.
+
+🧪 模擬驗證：傷害公式平衡 (Python)
+
+為了確保「力量型道館」與「肌肥大道館」的區別有做出來，且心率機制有效，我寫了一個簡單的 Python Class 模擬戰鬥邏輯。這可以幫助我們驗證數值。
+
+Python
+class PokeGymBattle:
+    def __init__(self, user_5rm, gym_type="HYPERTROPHY"):
+        self.user_5rm = user_5rm
+        self.gym_type = gym_type
+        
+        # 設定 Boss 屬性
+        if gym_type == "STRENGTH":
+            # 力量道館：高防禦，血量少
+            self.boss_hp = 500
+            self.boss_defense = 80  # 需要單發高傷才能破防
+            print(f"--- 進入力量道館 (BOSS: 鐵甲暴龍) ---")
+            print(f"BOSS 狀態: HP {self.boss_hp} | 防禦 {self.boss_defense}")
+        else:
+            # 肌肥大道館：低防禦，血量超高
+            self.boss_hp = 2000
+            self.boss_defense = 20
+            print(f"--- 進入肌肥大道館 (BOSS: 卡比獸) ---")
+            print(f"BOSS 狀態: HP {self.boss_hp} | 防禦 {self.boss_defense}")
+
+    def perform_set(self, weight, reps, heart_rate_zone):
+        # 1. 計算基礎傷害係數 (相對於 5RM 的強度)
+        intensity = weight / self.user_5rm
+        
+        # 2. 計算單發傷害 (Single Hit Damage)
+        # 假設基礎攻擊力常數為 100
+        base_attack = 100 
+        single_hit_damage = base_attack * intensity
+        
+        # 3. 心率加成 (Critical Hit)
+        crit_multiplier = 1.0
+        msg = ""
+        if heart_rate_zone >= 4:
+            crit_multiplier = 1.5
+            msg = "⚡ 爆擊! (心率高)"
+        elif heart_rate_zone >= 3:
+            crit_multiplier = 1.2
+            msg = "🔥 效果絕佳!"
+            
+        final_single_hit = single_hit_damage * crit_multiplier
+        
+        # 4. 判定是否破防 (力量道館核心機制)
+        damage_dealt = 0
+        if final_single_hit > self.boss_defense:
+            # 破防後，總傷害 = 單發有效傷害 * 次數
+            damage_dealt = (final_single_hit - self.boss_defense) * reps
+        else:
+            print(f"❌ 攻擊無效! 重量太輕 ({weight}kg)，無法擊穿 BOSS 厚皮 (防禦 {self.boss_defense})")
+            return
+
+        # 5. 扣血
+        self.boss_hp -= damage_dealt
+        self.boss_hp = max(0, self.boss_hp)
+        
+        print(f"動作: {weight}kg x {reps}下 | 心率區間: Z{heart_rate_zone}")
+        print(f"結果: 造成 {int(damage_dealt)} 點傷害 {msg}")
+        print(f"BOSS 剩餘 HP: {int(self.boss_hp)}\n")
+
+# --- 模擬測試 ---
+
+# 設定玩家深蹲 5RM 為 100kg
+player_5rm = 100 
+
+# 情境 A: 挑戰力量道館 (BOSS 防禦高)
+battle_str = PokeGymBattle(player_5rm, "STRENGTH")
+# 嘗試 1: 用輕重量做多次數 (50kg, 12下, 心率 Z2) -> 應該要打不動
+battle_str.perform_set(weight=50, reps=12, heart_rate_zone=2)
+# 嘗試 2: 用大重量做低次數 (90kg, 3下, 心率 Z4) -> 應該有效
+battle_str.perform_set(weight=90, reps=3, heart_rate_zone=4)
+
+print("-" * 30)
+
+# 情境 B: 挑戰肌肥大道館 (BOSS 血超厚)
+battle_hyp = PokeGymBattle(player_5rm, "HYPERTROPHY")
+# 嘗試 1: 用大重量做低次數 (90kg, 3下) -> 傷害雖高但次數少，總傷可能不夠
+battle_hyp.perform_set(weight=90, reps=3, heart_rate_zone=4)
+# 嘗試 2: 用中重量做多次數 (70kg, 12下) -> 累積大量傷害
+battle_hyp.perform_set(weight=70, reps=12, heart_rate_zone=3)
+模擬結果分析 (Logic Check)
+
+力量道館： 如果你拿輕重量（50kg）去刷次數，程式會顯示 攻擊無效，因為無法突破 Boss 的防禦值。這強迫玩家必須增加重量來達成「最大肌力」的訓練目標。
+
+肌肥大道館： 高重量雖然單發痛，但因為只有 3 下，總傷害可能只有 200 點；反而是中重量做 12 下，扣除低防禦後，能造成 500+ 點傷害。這鼓勵玩家累積容量 (Volume)。
+
+心率： 在挑戰大重量時，心率通常會飆高，這時給予 Critical Hit (1.5倍) 獎勵，非常符合現實體感。
+
+這個版本您覺得如何？如果這份規格 OK，我們可以開始討論如何生成具體的「怪物數據表」或是 UI 的細節。
+
+You said
+你的v2沒有包含v1全部內容，我需要稍等拿過去就可以開始給code agent 開發的spec 我需要你寫的越詳細越好
+Gemini said
+沒問題，我將 v1 (完整的 RPG 流程、屬性對抗、三階段戰鬥) 與 v2 (5RM 基準、漸進式超負荷、心率整合、分歧道館路線) 進行了深度融合。
+
+這份 spec.md 是專門為 Code Agent (如 Cursor, Windsurf, 或 AutoGPT) 撰寫的，包含了資料結構、演算法邏輯、常數定義與技術堆疊，開發者可以直接照著實作。
+
+Project Specification: IronMon (Project PokéGym)
+1. 專案概觀 (Project Overview)
+IronMon 是一款將健身訓練遊戲化的 RPG App。核心理念是將真實世界的健身數據（重量、次數、組數、心率）轉化為戰鬥數值。
+
+Unique Selling Point (USP): 結合「漸進式超負荷 (Progressive Overload)」與「屬性相剋 (Type Matchups)」。
+
+Target Audience: 透過遊戲化激勵自己突破 PR (Personal Record) 的健身愛好者。
+
+2. 技術堆疊 (Tech Stack)
+Frontend: Flutter (Dart) - 需支援 iOS HealthKit 與 Android Health Connect。
+
+State Management: Riverpod 或 Bloc。
+
+Backend: Firebase (Auth, Firestore, Cloud Functions).
+
+Local Storage: Hive or Isar (用於離線戰鬥數據緩存).
+
+Hardware Integration:
+
+iOS: health package (取得 Workout Session 與 Heart Rate).
+
+Android: Health Connect API.
+
+3. 核心資料模型 (Data Models)
+3.1 User Profile (Player)
+
+JSON
+{
+  "uid": "string",
+  "level": "int", // 玩家等級
+  "exp": "int", // 累積經驗值
+  "attributes": {
+    "str": "int", // 力量 (影響物理攻擊)
+    "end": "int", // 耐力 (影響 HP/PP)
+    "crt": "double" // 爆擊率 (由心率影響)
+  },
+  "benchmarks": {
+    "squat_5rm": "double", // 深蹲 5RM 基準
+    "bench_5rm": "double", // 臥推 5RM 基準
+    "deadlift_5rm": "double", // 硬舉 5RM 基準
+    "ohp_5rm": "double" // 肩推 5RM 基準
+  },
+  "unlocked_moves": ["push_up", "bench_press", "squat"] // 已解鎖招式 ID
+}
+3.2 Move (Exercise/Skill)
+
+JSON
+{
+  "id": "bench_press",
+  "name": "Barbell Bench Press",
+  "type": "FIRE", // 屬性：胸
+  "base_power": 100,
+  "scaling_stat": "bench_5rm", // 對應的基準值
+  "unlock_requirement": "level_5 OR item_tm_01"
+}
+3.3 Enemy (Boss/Minion)
+
+JSON
+{
+  "id": "enemy_001",
+  "name": "Geodude",
+  "type": ["ROCK", "GROUND"], // 屬性
+  "role": "MINION", // 分類: MINION (熱身), MID_BOSS (容量), GYM_LEADER (大重量)
+  "stats": {
+    "hp": "int",
+    "defense": "int", // 防禦力 (力量道館高防禦)
+    "evasion": "int" // 迴避率
+  }
+}
+4. 遊戲機制與演算法 (Game Mechanics & Algorithms)
+4.1 屬性相剋系統 (Type Effectiveness)
+
+Chest (FIRE): 剋 Grass (植物/木), 被 Water (水) 剋。
+
+Back (WATER): 剋 Fire (火), 被 Electric (電) 剋。
+
+Legs (ROCK/GROUND): 剋 Electric (電), 被 Water/Grass 剋。
+
+Shoulders (ELECTRIC): 剋 Flying (飛行), 被 Ground (地) 剋。
+
+Arms/Core (FIGHTING): 剋 Normal (一般), 被 Psychic (超能) 剋。
+
+4.2 戰鬥流程 (The Battle Loop - 3 Stages)
+
+每次訓練 Session 固定生成 3 個階段：
+
+Stage 1: The Minion (熱身階段 / Warm-up)
+
+敵人: 小拳石、綠毛蟲等級的小怪。
+
+特徵: 低 HP，低攻擊。
+
+通關條件: 完成指定次數的熱身組 (輕重量)。
+
+目的: 喚醒肌肉，累積初始 PP (能量)。
+
+Stage 2: The Mid-Boss (容量階段 / Hypertrophy)
+
+敵人: 豪力、隆隆石等級的中型怪。
+
+特徵: 高 HP (血牛)，中等防禦。
+
+通關條件: 累積足夠的 Volume (訓練容量) 才能削減其血量。
+
+適合動作: 8-12 RM 的肌肥大組。
+
+Stage 3: The Gym Leader (核心訓練 / Main Lift)
+
+分支選擇: 玩家在開始訓練前選擇「道館類型」。
+
+A. 力量道館 (Strength Gym):
+
+Boss: 像是大鋼蛇 (Steelix)。
+
+數值: HP 中等，DEF (防禦) 極高。
+
+傷害判定: 單發傷害 (Hit_Damage) 必須大於 Boss_Def 才能造成傷害。
+
+邏輯: 強迫玩家做大重量 (1-5 RM)。輕重量多次數會顯示 "It's not very effective..." (不破防)。
+
+B. 體格道館 (Hypertrophy Gym):
+
+Boss: 像是卡比獸 (Snorlax)。
+
+數值: HP 極高，DEF 低。
+
+傷害判定: 只要有動都有傷，重點是累積總傷害量 (Total_Damage)。
+
+邏輯: 強迫玩家做多組數、力竭組。
+
+4.3 傷害計算公式 (The Damage Formula) v2.0
+
+系統需實作此核心函式。
+
+Input:
+
+User_Weight: 實際負重 (kg)
+
+User_Reps: 次數
+
+User_5RM: 該動作對應的 5RM 基準
+
+Heart_Rate: 即時心率 (bpm)
+
+Move_Type: 動作屬性
+
+Enemy_Type: 敵人屬性
+
+Logic:
+
+強度係數 (Intensity Factor):
+
+Intensity= 
+User_5RM
+User_Weight
+​	
+ 
+
+(例: 100kg 5RM, 做 90kg -> Intensity = 0.9)
+
+屬性加成 (Type Multiplier):
+
+Super Effective (剋制): 1.5x
+
+Neutral: 1.0x
+
+Not Very Effective (被剋): 0.5x
+
+心率爆擊 (Heart Rate Critical):
+
+Zone 1-2 (<60% max): 1.0x
+
+Zone 3-4 (70-85% max): 1.2x (Critical Hit)
+
+Zone 5 (>85% max): 1.5x (Dynamax Mode - 但每回合扣自身 5% HP)
+
+單發基礎傷害 (Base Hit Damage):
+
+Hit_Damage=(Intensity×100)×Type_Mult×Heart_Mult
+最終結算 (Final Calculation per Turn):
+
+Scenario A (Strength Gym):
+
+Python
+if Hit_Damage > Boss_Def:
+    Total_Damage = (Hit_Damage - Boss_Def) * User_Reps
+else:
+    Total_Damage = 0 // 攻擊無效
+Scenario B (Hypertrophy Gym):
+
+Python
+Total_Damage = Hit_Damage * User_Reps
+4.4 漸進式超負荷系統 (Progressive Overload Trigger)
+
+自動校正: 若玩家在任一組的 Estimated_1RM (使用 Epley 公式計算) 超過系統紀錄的 Current_Max。
+
+事件: 戰鬥結束後觸發「進化動畫 (Evolution)」。
+
+結果: 更新 User Profile 的 5RM 數值，升級 Base Stats。
+
+5. UI/UX 規格 (Detailed Screens)
+5.1 Onboarding & Calibration
+
+5RM Input: 簡單的 Form 輸入深蹲、臥推、硬舉的當前數據。
+
+Wearable Sync: 請求 HealthKit/Google Fit 權限。
+
+5.2 Home (The Map)
+
+顯示當前位置（地圖 UI）。
+
+Daily Mission: 根據歷史頻率推薦道館。
+
+Algorithm: 若 Last_Workout_Date < 2 days ago -> 推薦 Split Routine (分化道館)。若 > 3 days -> 推薦 Full Body (混合屬性道館)。
+
+5.3 Battle Interface (The Workout)
+
+Top Half: 3D/2D Boss Sprite, HP Bar, Boss Name & Attribute.
+
+Bottom Half: Card-based UI for moves.
+
+Card 1: Barbell Bench Press (Fire)
+
+Card 2: Dumbbell Fly (Fire)
+
+Input Action: 點擊卡片 -> 輸入 Weight & Reps -> 確認 (播放攻擊動畫)。
+
+Live Overlay: 右上角顯示即時心率與 Zone 顏色 (藍/綠/橘/紅)。
+
+5.4 Item Shop & Inventory
+
+Potion (休息): 使用後，App 內的休息計時器暫停，允許玩家休息更久而不被扣「連擊分數」。
+
+Rare Candy (升級): 手動輸入「Cheat Meal」或「High Protein Meal」的照片/紀錄來獲得。
+
+6. 未來擴充 (Backlog) - Developers ignore for MVP
+Contest Hall (選美): 針對伸展/瑜珈，判斷數據改為「心率變異度 (HRV)」與「持續時間」。
+
+Raid Battle (團體戰): 多人連線，加總全隊 Volume 攻擊 Boss。
+
+7. 資源需求 (Assets Requirements)
+注意： 請使用合法授權素材，避免侵權。
+
+7.1 音樂 (Audio)
+
+Theme: 8-bit Chiptune 或 JRPG Orchestral。
+
+Sources:
+
+Search: "8-bit Battle Theme Royalty Free" on YouTube/SoundCloud.
+
+Recommended: Maoudamashii (魔王魂), Opengameart.org.
+
+7.2 圖片 (Visuals)
+
+Style: Pixel Art (像素風)。
+
+Sources:
+
+Itch.io assets (Monster packs).
+
+Kenny Assets (UI packs).
+
+8. 開發階段 (Development Phases)
+Phase 1 (Core Logic): 實作 5RM 換算傷害公式、Python 模擬腳本驗證數值平衡。
+
+Phase 2 (Basic App): Flutter UI 搭建，靜態數據輸入 (不接手錶)，完成單人戰鬥流程。
+
+Phase 3 (Wearable): 整合 HealthKit 讀取心率，加入 Zone 加成。
+
+Phase 4 (Gamification): 加入經驗值、升級、解鎖招式、道具系統。
+
