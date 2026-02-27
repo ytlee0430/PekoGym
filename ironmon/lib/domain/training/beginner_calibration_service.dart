@@ -17,7 +17,7 @@ class BeginnerCalibrationService {
   ///
   /// Returns 0.0 if [weight] or [reps] is not positive.
   double estimateFiveRm(double weight, int reps) {
-    if (weight <= 0 || reps <= 0) return 0;
+    if (weight <= 0 || reps <= 0) return 0.0;
     final estimated1Rm = weight * (1 + reps / 30);
     return estimated1Rm / 1.0678;
   }

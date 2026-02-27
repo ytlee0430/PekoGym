@@ -1,6 +1,6 @@
 # Story 1.3: Beginner Mode & Auto-Calibration
 
-Status: review
+Status: done
 
 ## Story
 

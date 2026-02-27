@@ -43,7 +43,7 @@ development_status:
   epic-1: in-progress
   1-1-project-initialization-architecture-scaffold: done
   1-2-player-profile-creation-persistence: done
-  1-3-beginner-mode-auto-calibration: review
+  1-3-beginner-mode-auto-calibration: done
   1-4-home-screen: backlog
   epic-1-retrospective: optional
 

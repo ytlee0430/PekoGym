@@ -45,6 +45,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       overheadPressFiveRm: double.tryParse(_ohpController.text) ?? 0.0,
       weeklyFrequency: _weeklyFrequency,
       isBeginnerMode: _isBeginnerMode,
+      calibrationSessionsCompleted: 0,
+      calibrationTargetSessions: 5,
     );
 
     try {
@@ -132,7 +134,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               ),
               const SizedBox(height: 24),
               DropdownButtonFormField<int>(
-                initialValue: _weeklyFrequency,
+                value: _weeklyFrequency,
                 decoration: const InputDecoration(
                   labelText: 'Weekly Training Frequency',
                 ),

@@ -45,4 +45,17 @@ class UserProfileNotifier extends AsyncNotifier<UserProfile?> {
       Failure(:final error) => AsyncValue.error(error, StackTrace.current),
     };
   }
+
+  /// Persists calibration results atomically.
+  Future<void> updateCalibration(UserProfile profile) async {
+    state = const AsyncValue.loading();
+    final result = await ref
+        .read(userProfileRepositoryProvider)
+        .updateCalibration(profile);
+    state = switch (result) {
+      Success(:final value) => AsyncValue.data(value),
+      Failure(:final error) =>
+        AsyncValue.error(error, StackTrace.current),
+    };
+  }
 }

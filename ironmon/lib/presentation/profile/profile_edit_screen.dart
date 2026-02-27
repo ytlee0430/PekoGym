@@ -21,20 +21,17 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
   final _deadliftController = TextEditingController();
   final _ohpController = TextEditingController();
   bool _isSaving = false;
+  bool _initialized = false;
   UserProfile? _currentProfile;
 
-  @override
-  void initState() {
-    super.initState();
-    ref.read(userProfileProvider).whenData((profile) {
-      if (profile != null) {
-        _currentProfile = profile;
-        _squatController.text = profile.squatFiveRm.toString();
-        _benchController.text = profile.benchPressFiveRm.toString();
-        _deadliftController.text = profile.deadliftFiveRm.toString();
-        _ohpController.text = profile.overheadPressFiveRm.toString();
-      }
-    });
+  void _initFromProfile(UserProfile profile) {
+    if (_initialized) return;
+    _initialized = true;
+    _currentProfile = profile;
+    _squatController.text = profile.squatFiveRm.toString();
+    _benchController.text = profile.benchPressFiveRm.toString();
+    _deadliftController.text = profile.deadliftFiveRm.toString();
+    _ohpController.text = profile.overheadPressFiveRm.toString();
   }
 
   @override
@@ -67,7 +64,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
     try {
       await ref
           .read(userProfileProvider.notifier)
-          .saveProfile(updated);
+          .updateProfile(updated);
 
       if (!mounted) return;
 
@@ -119,6 +116,10 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
 
   @override
   Widget build(BuildContext context) {
+    ref.watch(userProfileProvider).whenData((profile) {
+      if (profile != null) _initFromProfile(profile);
+    });
+
     return Scaffold(
       appBar: AppBar(title: const Text('Edit 5RM Values')),
       body: SingleChildScrollView(
