@@ -14,7 +14,7 @@ class AppDatabase extends _$AppDatabase {
       : super(executor ?? _openConnection());
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -24,6 +24,17 @@ class AppDatabase extends _$AppDatabase {
             // MVP pre-release: drop and recreate (data loss acceptable).
             await m.drop(userProfiles);
             await m.createTable(userProfiles);
+          }
+          if (from < 3) {
+            // Additive migration — preserves existing profile data.
+            await m.addColumn(
+              userProfiles,
+              userProfiles.calibrationSessionsCompleted,
+            );
+            await m.addColumn(
+              userProfiles,
+              userProfiles.calibrationTargetSessions,
+            );
           }
         },
       );

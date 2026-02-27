@@ -16,6 +16,8 @@ class UserProfile {
     this.overheadPressFiveRm = 0.0,
     this.weeklyFrequency = 3,
     this.isBeginnerMode = false,
+    this.calibrationSessionsCompleted = 0,
+    this.calibrationTargetSessions = 5,
     this.unlockedMoveIds = const [],
   });
 
@@ -46,6 +48,13 @@ class UserProfile {
   /// Whether in beginner auto-calibration mode (Story 1.3).
   final bool isBeginnerMode;
 
+  /// Sessions completed during auto-calibration (0 to
+  /// calibrationTargetSessions).
+  final int calibrationSessionsCompleted;
+
+  /// Target sessions for auto-calibration to complete (default 5).
+  final int calibrationTargetSessions;
+
   /// List of unlocked move IDs.
   final List<String> unlockedMoveIds;
 
@@ -60,6 +69,8 @@ class UserProfile {
     double? overheadPressFiveRm,
     int? weeklyFrequency,
     bool? isBeginnerMode,
+    int? calibrationSessionsCompleted,
+    int? calibrationTargetSessions,
     List<String>? unlockedMoveIds,
   }) {
     return UserProfile(
@@ -72,7 +83,13 @@ class UserProfile {
       overheadPressFiveRm: overheadPressFiveRm ?? this.overheadPressFiveRm,
       weeklyFrequency: weeklyFrequency ?? this.weeklyFrequency,
       isBeginnerMode: isBeginnerMode ?? this.isBeginnerMode,
-      unlockedMoveIds: unlockedMoveIds ?? this.unlockedMoveIds,
+      calibrationSessionsCompleted:
+          calibrationSessionsCompleted ?? this.calibrationSessionsCompleted,
+      calibrationTargetSessions:
+          calibrationTargetSessions ?? this.calibrationTargetSessions,
+      unlockedMoveIds: unlockedMoveIds != null
+          ? List<String>.unmodifiable(unlockedMoveIds)
+          : this.unlockedMoveIds,
     );
   }
 
@@ -89,6 +106,9 @@ class UserProfile {
         other.overheadPressFiveRm == overheadPressFiveRm &&
         other.weeklyFrequency == weeklyFrequency &&
         other.isBeginnerMode == isBeginnerMode &&
+        other.calibrationSessionsCompleted ==
+            calibrationSessionsCompleted &&
+        other.calibrationTargetSessions == calibrationTargetSessions &&
         const ListEquality<String>()
             .equals(other.unlockedMoveIds, unlockedMoveIds);
   }
@@ -104,6 +124,8 @@ class UserProfile {
         overheadPressFiveRm,
         weeklyFrequency,
         isBeginnerMode,
+        calibrationSessionsCompleted,
+        calibrationTargetSessions,
         const ListEquality<String>().hash(unlockedMoveIds),
       );
 
@@ -116,6 +138,8 @@ class UserProfile {
         'ohp: $overheadPressFiveRm, '
         'freq: $weeklyFrequency, '
         'beginner: $isBeginnerMode, '
+        'calibSessions: $calibrationSessionsCompleted/'
+        '$calibrationTargetSessions, '
         'unlocks: $unlockedMoveIds)';
   }
 }

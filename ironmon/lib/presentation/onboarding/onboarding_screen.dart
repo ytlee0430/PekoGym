@@ -22,6 +22,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   final _deadliftController = TextEditingController();
   final _ohpController = TextEditingController();
   int _weeklyFrequency = 3;
+  bool _isBeginnerMode = false;
   bool _isSaving = false;
 
   @override
@@ -43,6 +44,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       deadliftFiveRm: double.tryParse(_deadliftController.text) ?? 0.0,
       overheadPressFiveRm: double.tryParse(_ohpController.text) ?? 0.0,
       weeklyFrequency: _weeklyFrequency,
+      isBeginnerMode: _isBeginnerMode,
     );
 
     try {
@@ -89,6 +91,26 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              SwitchListTile(
+                title: const Text('Beginner Mode'),
+                subtitle: const Text(
+                  'Start with minimum weights. System auto-calibrates '
+                  'your 5RM over your first 5 sessions.',
+                ),
+                value: _isBeginnerMode,
+                onChanged: (value) {
+                  setState(() {
+                    _isBeginnerMode = value;
+                    if (value) {
+                      _squatController.text = '20';
+                      _benchController.text = '20';
+                      _deadliftController.text = '20';
+                      _ohpController.text = '20';
+                    }
+                  });
+                },
+              ),
+              const SizedBox(height: 8),
               FiveRmInputCard(
                 label: 'Squat',
                 controller: _squatController,

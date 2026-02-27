@@ -33,4 +33,16 @@ class UserProfileNotifier extends AsyncNotifier<UserProfile?> {
       Failure(:final error) => AsyncValue.error(error, StackTrace.current),
     };
   }
+
+  /// Updates an existing [profile] in the database and updates provider state.
+  Future<void> updateProfile(UserProfile profile) async {
+    state = const AsyncValue.loading();
+    final result = await ref
+        .read(userProfileRepositoryProvider)
+        .updateUserProfile(profile);
+    state = switch (result) {
+      Success(:final value) => AsyncValue.data(value),
+      Failure(:final error) => AsyncValue.error(error, StackTrace.current),
+    };
+  }
 }

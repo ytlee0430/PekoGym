@@ -49,6 +49,16 @@ void main() {
         expect(profile.isBeginnerMode, isFalse);
       });
 
+      test('calibrationSessionsCompleted defaults to 0', () {
+        const profile = UserProfile();
+        expect(profile.calibrationSessionsCompleted, 0);
+      });
+
+      test('calibrationTargetSessions defaults to 5', () {
+        const profile = UserProfile();
+        expect(profile.calibrationTargetSessions, 5);
+      });
+
       test('unlockedMoveIds defaults to empty list', () {
         const profile = UserProfile();
         expect(profile.unlockedMoveIds, isEmpty);
@@ -87,6 +97,30 @@ void main() {
         );
         expect(updated.unlockedMoveIds, ['push_up']);
       });
+
+      test('updates calibrationSessionsCompleted', () {
+        const profile = UserProfile();
+        final updated =
+            profile.copyWith(calibrationSessionsCompleted: 3);
+        expect(updated.calibrationSessionsCompleted, 3);
+      });
+
+      test('updates calibrationTargetSessions', () {
+        const profile = UserProfile();
+        final updated =
+            profile.copyWith(calibrationTargetSessions: 10);
+        expect(updated.calibrationTargetSessions, 10);
+      });
+
+      test('preserves other fields when updating calibration fields', () {
+        const profile = UserProfile(
+          squatFiveRm: 100,
+          calibrationSessionsCompleted: 2,
+        );
+        final updated =
+            profile.copyWith(calibrationSessionsCompleted: 3);
+        expect(updated.squatFiveRm, 100);
+      });
     });
 
     group('equality', () {
@@ -99,6 +133,18 @@ void main() {
       test('instances with different field values are not equal', () {
         const a = UserProfile(squatFiveRm: 100);
         const b = UserProfile(squatFiveRm: 110);
+        expect(a, isNot(equals(b)));
+      });
+
+      test('profiles differ when calibrationSessionsCompleted differs', () {
+        const a = UserProfile(calibrationSessionsCompleted: 2);
+        const b = UserProfile(calibrationSessionsCompleted: 3);
+        expect(a, isNot(equals(b)));
+      });
+
+      test('profiles differ when calibrationTargetSessions differs', () {
+        const a = UserProfile();
+        const b = UserProfile(calibrationTargetSessions: 3);
         expect(a, isNot(equals(b)));
       });
     });

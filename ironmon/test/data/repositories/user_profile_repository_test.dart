@@ -84,5 +84,58 @@ void main() {
       final saved = (result as Success<UserProfile, Exception>).value;
       expect(saved.unlockedMoveIds, ['push_up', 'squat']);
     });
+
+    test('saveUserProfile persists calibration fields', () async {
+      const profile = UserProfile(
+        isBeginnerMode: true,
+        calibrationSessionsCompleted: 2,
+      );
+      final result = await repo.saveUserProfile(profile);
+      final saved = (result as Success<UserProfile, Exception>).value;
+      expect(saved.isBeginnerMode, isTrue);
+      expect(saved.calibrationSessionsCompleted, 2);
+      expect(saved.calibrationTargetSessions, 5);
+    });
+
+    test('updateCalibration atomically persists all calibration fields',
+        () async {
+      const initial = UserProfile(
+        squatFiveRm: 20,
+        isBeginnerMode: true,
+      );
+      await repo.saveUserProfile(initial);
+
+      final updated = initial.copyWith(
+        id: 1,
+        squatFiveRm: 45,
+        calibrationSessionsCompleted: 1,
+      );
+      final result = await repo.updateCalibration(updated);
+      expect(result, isA<Success<UserProfile, Exception>>());
+      final saved = (result as Success<UserProfile, Exception>).value;
+      expect(saved.squatFiveRm, 45);
+      expect(saved.calibrationSessionsCompleted, 1);
+      expect(saved.isBeginnerMode, isTrue);
+    });
+
+    test(
+        'updateCalibration sets isBeginnerMode false when sessions '
+        'reach target', () async {
+      const initial = UserProfile(
+        isBeginnerMode: true,
+        calibrationSessionsCompleted: 4,
+      );
+      await repo.saveUserProfile(initial);
+
+      final updated = initial.copyWith(
+        id: 1,
+        calibrationSessionsCompleted: 5,
+        isBeginnerMode: false,
+      );
+      final result = await repo.updateCalibration(updated);
+      final saved = (result as Success<UserProfile, Exception>).value;
+      expect(saved.calibrationSessionsCompleted, 5);
+      expect(saved.isBeginnerMode, isFalse);
+    });
   });
 }

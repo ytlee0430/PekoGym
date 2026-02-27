@@ -16,6 +16,8 @@ void main() {
       overheadPressFiveRm: 60,
       weeklyFrequency: 4,
       isBeginnerMode: true,
+      calibrationSessionsCompleted: 2,
+      calibrationTargetSessions: 5,
       unlockedMoveIds: '["push_up","squat"]',
     );
 
@@ -31,6 +33,8 @@ void main() {
         expect(profile.overheadPressFiveRm, 60);
         expect(profile.weeklyFrequency, 4);
         expect(profile.isBeginnerMode, isTrue);
+        expect(profile.calibrationSessionsCompleted, 2);
+        expect(profile.calibrationTargetSessions, 5);
       });
 
       test('decodes JSON unlockedMoveIds to List<String>', () {
@@ -87,6 +91,41 @@ void main() {
         expect(companion.weeklyFrequency.value, 5);
         expect(companion.isBeginnerMode.value, isTrue);
       });
+
+      test('maps calibration fields in toInsertable', () {
+        const profile = UserProfile(calibrationSessionsCompleted: 3);
+        final companion = UserProfileMapper.toInsertable(profile);
+        expect(companion.calibrationSessionsCompleted.value, 3);
+        expect(companion.calibrationTargetSessions.value, 5);
+      });
+
+      test('round-trips calibrationSessionsCompleted through '
+          'toInsertable → toDomain', () {
+        const profile = UserProfile(
+          id: 1,
+          calibrationSessionsCompleted: 3,
+        );
+        final companion = UserProfileMapper.toInsertable(profile);
+        final reconstructed = UserProfileEntity(
+          id: companion.id.value,
+          level: companion.level.value,
+          experiencePoints: companion.experiencePoints.value,
+          squatFiveRm: companion.squatFiveRm.value,
+          benchPressFiveRm: companion.benchPressFiveRm.value,
+          deadliftFiveRm: companion.deadliftFiveRm.value,
+          overheadPressFiveRm: companion.overheadPressFiveRm.value,
+          weeklyFrequency: companion.weeklyFrequency.value,
+          isBeginnerMode: companion.isBeginnerMode.value,
+          calibrationSessionsCompleted:
+              companion.calibrationSessionsCompleted.value,
+          calibrationTargetSessions:
+              companion.calibrationTargetSessions.value,
+          unlockedMoveIds: companion.unlockedMoveIds.value,
+        );
+        final domain = UserProfileMapper.toDomain(reconstructed);
+        expect(domain.calibrationSessionsCompleted, 3);
+        expect(domain.calibrationTargetSessions, 5);
+      });
     });
 
     group('toUpdateCompanion', () {
@@ -110,6 +149,16 @@ void main() {
         expect(companion.squatFiveRm.value, 110);
         expect(companion.weeklyFrequency.value, 6);
         expect(companion.isBeginnerMode.value, isTrue);
+      });
+
+      test('maps calibration fields in toUpdateCompanion', () {
+        const profile = UserProfile(
+          id: 1,
+          calibrationSessionsCompleted: 2,
+        );
+        final companion = UserProfileMapper.toUpdateCompanion(profile);
+        expect(companion.calibrationSessionsCompleted.value, 2);
+        expect(companion.calibrationTargetSessions.value, 5);
       });
     });
   });

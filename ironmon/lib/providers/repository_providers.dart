@@ -1,9 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ironmon/data/local/app_database.dart';
 import 'package:ironmon/data/repositories/user_profile_repository.dart';
+import 'package:ironmon/domain/training/repositories/user_profile_repository.dart';
 
-/// Singleton [AppDatabase] provider — shared across all repositories.
-/// Disposes the database connection when the provider is disposed.
+/// Database provider. Singleton instance shared across all repositories.
 final appDatabaseProvider = Provider<AppDatabase>((ref) {
   final db = AppDatabase();
   ref.onDispose(db.close);
@@ -12,5 +12,5 @@ final appDatabaseProvider = Provider<AppDatabase>((ref) {
 
 /// Singleton [UserProfileRepository] provider.
 final userProfileRepositoryProvider = Provider<UserProfileRepository>((ref) {
-  return DriftUserProfileRepository(ref.read(appDatabaseProvider));
+  return DriftUserProfileRepository(ref.watch(appDatabaseProvider));
 });

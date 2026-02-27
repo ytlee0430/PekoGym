@@ -13,11 +13,10 @@ class $UserProfilesTable extends UserProfiles
   @override
   late final GeneratedColumn<int> id = GeneratedColumn<int>(
       'id', aliasedName, false,
-      hasAutoIncrement: true,
       type: DriftSqlType.int,
       requiredDuringInsert: false,
-      defaultConstraints:
-          GeneratedColumn.constraintIsAlways('PRIMARY KEY AUTOINCREMENT'));
+      $customConstraints: 'NOT NULL CHECK (id = 1)',
+      defaultValue: const Constant(1));
   static const VerificationMeta _levelMeta = const VerificationMeta('level');
   @override
   late final GeneratedColumn<int> level = GeneratedColumn<int>(
@@ -40,7 +39,7 @@ class $UserProfilesTable extends UserProfiles
       'squat_five_rm', aliasedName, false,
       type: DriftSqlType.double,
       requiredDuringInsert: false,
-      defaultValue: const Constant(0.0));
+      defaultValue: const Constant(0));
   static const VerificationMeta _benchPressFiveRmMeta =
       const VerificationMeta('benchPressFiveRm');
   @override
@@ -48,7 +47,7 @@ class $UserProfilesTable extends UserProfiles
       'bench_press_five_rm', aliasedName, false,
       type: DriftSqlType.double,
       requiredDuringInsert: false,
-      defaultValue: const Constant(0.0));
+      defaultValue: const Constant(0));
   static const VerificationMeta _deadliftFiveRmMeta =
       const VerificationMeta('deadliftFiveRm');
   @override
@@ -56,7 +55,7 @@ class $UserProfilesTable extends UserProfiles
       'deadlift_five_rm', aliasedName, false,
       type: DriftSqlType.double,
       requiredDuringInsert: false,
-      defaultValue: const Constant(0.0));
+      defaultValue: const Constant(0));
   static const VerificationMeta _overheadPressFiveRmMeta =
       const VerificationMeta('overheadPressFiveRm');
   @override
@@ -64,7 +63,7 @@ class $UserProfilesTable extends UserProfiles
       GeneratedColumn<double>('overhead_press_five_rm', aliasedName, false,
           type: DriftSqlType.double,
           requiredDuringInsert: false,
-          defaultValue: const Constant(0.0));
+          defaultValue: const Constant(0));
   static const VerificationMeta _weeklyFrequencyMeta =
       const VerificationMeta('weeklyFrequency');
   @override
@@ -83,6 +82,22 @@ class $UserProfilesTable extends UserProfiles
       defaultConstraints: GeneratedColumn.constraintIsAlways(
           'CHECK ("is_beginner_mode" IN (0, 1))'),
       defaultValue: const Constant(false));
+  static const VerificationMeta _calibrationSessionsCompletedMeta =
+      const VerificationMeta('calibrationSessionsCompleted');
+  @override
+  late final GeneratedColumn<int> calibrationSessionsCompleted =
+      GeneratedColumn<int>('calibration_sessions_completed', aliasedName, false,
+          type: DriftSqlType.int,
+          requiredDuringInsert: false,
+          defaultValue: const Constant(0));
+  static const VerificationMeta _calibrationTargetSessionsMeta =
+      const VerificationMeta('calibrationTargetSessions');
+  @override
+  late final GeneratedColumn<int> calibrationTargetSessions =
+      GeneratedColumn<int>('calibration_target_sessions', aliasedName, false,
+          type: DriftSqlType.int,
+          requiredDuringInsert: false,
+          defaultValue: const Constant(5));
   static const VerificationMeta _unlockedMoveIdsMeta =
       const VerificationMeta('unlockedMoveIds');
   @override
@@ -102,6 +117,8 @@ class $UserProfilesTable extends UserProfiles
         overheadPressFiveRm,
         weeklyFrequency,
         isBeginnerMode,
+        calibrationSessionsCompleted,
+        calibrationTargetSessions,
         unlockedMoveIds
       ];
   @override
@@ -163,6 +180,20 @@ class $UserProfilesTable extends UserProfiles
           isBeginnerMode.isAcceptableOrUnknown(
               data['is_beginner_mode']!, _isBeginnerModeMeta));
     }
+    if (data.containsKey('calibration_sessions_completed')) {
+      context.handle(
+          _calibrationSessionsCompletedMeta,
+          calibrationSessionsCompleted.isAcceptableOrUnknown(
+              data['calibration_sessions_completed']!,
+              _calibrationSessionsCompletedMeta));
+    }
+    if (data.containsKey('calibration_target_sessions')) {
+      context.handle(
+          _calibrationTargetSessionsMeta,
+          calibrationTargetSessions.isAcceptableOrUnknown(
+              data['calibration_target_sessions']!,
+              _calibrationTargetSessionsMeta));
+    }
     if (data.containsKey('unlocked_move_ids')) {
       context.handle(
           _unlockedMoveIdsMeta,
@@ -197,6 +228,12 @@ class $UserProfilesTable extends UserProfiles
           .read(DriftSqlType.int, data['${effectivePrefix}weekly_frequency'])!,
       isBeginnerMode: attachedDatabase.typeMapping
           .read(DriftSqlType.bool, data['${effectivePrefix}is_beginner_mode'])!,
+      calibrationSessionsCompleted: attachedDatabase.typeMapping.read(
+          DriftSqlType.int,
+          data['${effectivePrefix}calibration_sessions_completed'])!,
+      calibrationTargetSessions: attachedDatabase.typeMapping.read(
+          DriftSqlType.int,
+          data['${effectivePrefix}calibration_target_sessions'])!,
       unlockedMoveIds: attachedDatabase.typeMapping.read(
           DriftSqlType.string, data['${effectivePrefix}unlocked_move_ids'])!,
     );
@@ -210,7 +247,8 @@ class $UserProfilesTable extends UserProfiles
 
 class UserProfileEntity extends DataClass
     implements Insertable<UserProfileEntity> {
-  /// Auto-incremented primary key (always 1 for singleton profile).
+  /// Singleton primary key. [primaryKey] getter declares this as the
+  /// table-level PK; customConstraint enforces the singleton CHECK (id = 1).
   final int id;
 
   /// Current player level (starts at 1).
@@ -237,6 +275,12 @@ class UserProfileEntity extends DataClass
   /// Whether the player is in beginner auto-calibration mode.
   final bool isBeginnerMode;
 
+  /// Number of sessions completed during beginner calibration.
+  final int calibrationSessionsCompleted;
+
+  /// Target number of calibration sessions (default 5).
+  final int calibrationTargetSessions;
+
   /// JSON-encoded list of unlocked move IDs (e.g. '["push_up"]').
   final String unlockedMoveIds;
   const UserProfileEntity(
@@ -249,6 +293,8 @@ class UserProfileEntity extends DataClass
       required this.overheadPressFiveRm,
       required this.weeklyFrequency,
       required this.isBeginnerMode,
+      required this.calibrationSessionsCompleted,
+      required this.calibrationTargetSessions,
       required this.unlockedMoveIds});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -262,6 +308,10 @@ class UserProfileEntity extends DataClass
     map['overhead_press_five_rm'] = Variable<double>(overheadPressFiveRm);
     map['weekly_frequency'] = Variable<int>(weeklyFrequency);
     map['is_beginner_mode'] = Variable<bool>(isBeginnerMode);
+    map['calibration_sessions_completed'] =
+        Variable<int>(calibrationSessionsCompleted);
+    map['calibration_target_sessions'] =
+        Variable<int>(calibrationTargetSessions);
     map['unlocked_move_ids'] = Variable<String>(unlockedMoveIds);
     return map;
   }
@@ -277,6 +327,8 @@ class UserProfileEntity extends DataClass
       overheadPressFiveRm: Value(overheadPressFiveRm),
       weeklyFrequency: Value(weeklyFrequency),
       isBeginnerMode: Value(isBeginnerMode),
+      calibrationSessionsCompleted: Value(calibrationSessionsCompleted),
+      calibrationTargetSessions: Value(calibrationTargetSessions),
       unlockedMoveIds: Value(unlockedMoveIds),
     );
   }
@@ -295,6 +347,10 @@ class UserProfileEntity extends DataClass
           serializer.fromJson<double>(json['overheadPressFiveRm']),
       weeklyFrequency: serializer.fromJson<int>(json['weeklyFrequency']),
       isBeginnerMode: serializer.fromJson<bool>(json['isBeginnerMode']),
+      calibrationSessionsCompleted:
+          serializer.fromJson<int>(json['calibrationSessionsCompleted']),
+      calibrationTargetSessions:
+          serializer.fromJson<int>(json['calibrationTargetSessions']),
       unlockedMoveIds: serializer.fromJson<String>(json['unlockedMoveIds']),
     );
   }
@@ -311,6 +367,10 @@ class UserProfileEntity extends DataClass
       'overheadPressFiveRm': serializer.toJson<double>(overheadPressFiveRm),
       'weeklyFrequency': serializer.toJson<int>(weeklyFrequency),
       'isBeginnerMode': serializer.toJson<bool>(isBeginnerMode),
+      'calibrationSessionsCompleted':
+          serializer.toJson<int>(calibrationSessionsCompleted),
+      'calibrationTargetSessions':
+          serializer.toJson<int>(calibrationTargetSessions),
       'unlockedMoveIds': serializer.toJson<String>(unlockedMoveIds),
     };
   }
@@ -325,6 +385,8 @@ class UserProfileEntity extends DataClass
           double? overheadPressFiveRm,
           int? weeklyFrequency,
           bool? isBeginnerMode,
+          int? calibrationSessionsCompleted,
+          int? calibrationTargetSessions,
           String? unlockedMoveIds}) =>
       UserProfileEntity(
         id: id ?? this.id,
@@ -336,6 +398,10 @@ class UserProfileEntity extends DataClass
         overheadPressFiveRm: overheadPressFiveRm ?? this.overheadPressFiveRm,
         weeklyFrequency: weeklyFrequency ?? this.weeklyFrequency,
         isBeginnerMode: isBeginnerMode ?? this.isBeginnerMode,
+        calibrationSessionsCompleted:
+            calibrationSessionsCompleted ?? this.calibrationSessionsCompleted,
+        calibrationTargetSessions:
+            calibrationTargetSessions ?? this.calibrationTargetSessions,
         unlockedMoveIds: unlockedMoveIds ?? this.unlockedMoveIds,
       );
   UserProfileEntity copyWithCompanion(UserProfilesCompanion data) {
@@ -362,6 +428,12 @@ class UserProfileEntity extends DataClass
       isBeginnerMode: data.isBeginnerMode.present
           ? data.isBeginnerMode.value
           : this.isBeginnerMode,
+      calibrationSessionsCompleted: data.calibrationSessionsCompleted.present
+          ? data.calibrationSessionsCompleted.value
+          : this.calibrationSessionsCompleted,
+      calibrationTargetSessions: data.calibrationTargetSessions.present
+          ? data.calibrationTargetSessions.value
+          : this.calibrationTargetSessions,
       unlockedMoveIds: data.unlockedMoveIds.present
           ? data.unlockedMoveIds.value
           : this.unlockedMoveIds,
@@ -380,6 +452,9 @@ class UserProfileEntity extends DataClass
           ..write('overheadPressFiveRm: $overheadPressFiveRm, ')
           ..write('weeklyFrequency: $weeklyFrequency, ')
           ..write('isBeginnerMode: $isBeginnerMode, ')
+          ..write(
+              'calibrationSessionsCompleted: $calibrationSessionsCompleted, ')
+          ..write('calibrationTargetSessions: $calibrationTargetSessions, ')
           ..write('unlockedMoveIds: $unlockedMoveIds')
           ..write(')'))
         .toString();
@@ -396,6 +471,8 @@ class UserProfileEntity extends DataClass
       overheadPressFiveRm,
       weeklyFrequency,
       isBeginnerMode,
+      calibrationSessionsCompleted,
+      calibrationTargetSessions,
       unlockedMoveIds);
   @override
   bool operator ==(Object other) =>
@@ -410,6 +487,9 @@ class UserProfileEntity extends DataClass
           other.overheadPressFiveRm == this.overheadPressFiveRm &&
           other.weeklyFrequency == this.weeklyFrequency &&
           other.isBeginnerMode == this.isBeginnerMode &&
+          other.calibrationSessionsCompleted ==
+              this.calibrationSessionsCompleted &&
+          other.calibrationTargetSessions == this.calibrationTargetSessions &&
           other.unlockedMoveIds == this.unlockedMoveIds);
 }
 
@@ -423,6 +503,8 @@ class UserProfilesCompanion extends UpdateCompanion<UserProfileEntity> {
   final Value<double> overheadPressFiveRm;
   final Value<int> weeklyFrequency;
   final Value<bool> isBeginnerMode;
+  final Value<int> calibrationSessionsCompleted;
+  final Value<int> calibrationTargetSessions;
   final Value<String> unlockedMoveIds;
   const UserProfilesCompanion({
     this.id = const Value.absent(),
@@ -434,6 +516,8 @@ class UserProfilesCompanion extends UpdateCompanion<UserProfileEntity> {
     this.overheadPressFiveRm = const Value.absent(),
     this.weeklyFrequency = const Value.absent(),
     this.isBeginnerMode = const Value.absent(),
+    this.calibrationSessionsCompleted = const Value.absent(),
+    this.calibrationTargetSessions = const Value.absent(),
     this.unlockedMoveIds = const Value.absent(),
   });
   UserProfilesCompanion.insert({
@@ -446,6 +530,8 @@ class UserProfilesCompanion extends UpdateCompanion<UserProfileEntity> {
     this.overheadPressFiveRm = const Value.absent(),
     this.weeklyFrequency = const Value.absent(),
     this.isBeginnerMode = const Value.absent(),
+    this.calibrationSessionsCompleted = const Value.absent(),
+    this.calibrationTargetSessions = const Value.absent(),
     this.unlockedMoveIds = const Value.absent(),
   });
   static Insertable<UserProfileEntity> custom({
@@ -458,6 +544,8 @@ class UserProfilesCompanion extends UpdateCompanion<UserProfileEntity> {
     Expression<double>? overheadPressFiveRm,
     Expression<int>? weeklyFrequency,
     Expression<bool>? isBeginnerMode,
+    Expression<int>? calibrationSessionsCompleted,
+    Expression<int>? calibrationTargetSessions,
     Expression<String>? unlockedMoveIds,
   }) {
     return RawValuesInsertable({
@@ -471,6 +559,10 @@ class UserProfilesCompanion extends UpdateCompanion<UserProfileEntity> {
         'overhead_press_five_rm': overheadPressFiveRm,
       if (weeklyFrequency != null) 'weekly_frequency': weeklyFrequency,
       if (isBeginnerMode != null) 'is_beginner_mode': isBeginnerMode,
+      if (calibrationSessionsCompleted != null)
+        'calibration_sessions_completed': calibrationSessionsCompleted,
+      if (calibrationTargetSessions != null)
+        'calibration_target_sessions': calibrationTargetSessions,
       if (unlockedMoveIds != null) 'unlocked_move_ids': unlockedMoveIds,
     });
   }
@@ -485,6 +577,8 @@ class UserProfilesCompanion extends UpdateCompanion<UserProfileEntity> {
       Value<double>? overheadPressFiveRm,
       Value<int>? weeklyFrequency,
       Value<bool>? isBeginnerMode,
+      Value<int>? calibrationSessionsCompleted,
+      Value<int>? calibrationTargetSessions,
       Value<String>? unlockedMoveIds}) {
     return UserProfilesCompanion(
       id: id ?? this.id,
@@ -496,6 +590,10 @@ class UserProfilesCompanion extends UpdateCompanion<UserProfileEntity> {
       overheadPressFiveRm: overheadPressFiveRm ?? this.overheadPressFiveRm,
       weeklyFrequency: weeklyFrequency ?? this.weeklyFrequency,
       isBeginnerMode: isBeginnerMode ?? this.isBeginnerMode,
+      calibrationSessionsCompleted:
+          calibrationSessionsCompleted ?? this.calibrationSessionsCompleted,
+      calibrationTargetSessions:
+          calibrationTargetSessions ?? this.calibrationTargetSessions,
       unlockedMoveIds: unlockedMoveIds ?? this.unlockedMoveIds,
     );
   }
@@ -531,6 +629,14 @@ class UserProfilesCompanion extends UpdateCompanion<UserProfileEntity> {
     if (isBeginnerMode.present) {
       map['is_beginner_mode'] = Variable<bool>(isBeginnerMode.value);
     }
+    if (calibrationSessionsCompleted.present) {
+      map['calibration_sessions_completed'] =
+          Variable<int>(calibrationSessionsCompleted.value);
+    }
+    if (calibrationTargetSessions.present) {
+      map['calibration_target_sessions'] =
+          Variable<int>(calibrationTargetSessions.value);
+    }
     if (unlockedMoveIds.present) {
       map['unlocked_move_ids'] = Variable<String>(unlockedMoveIds.value);
     }
@@ -549,6 +655,9 @@ class UserProfilesCompanion extends UpdateCompanion<UserProfileEntity> {
           ..write('overheadPressFiveRm: $overheadPressFiveRm, ')
           ..write('weeklyFrequency: $weeklyFrequency, ')
           ..write('isBeginnerMode: $isBeginnerMode, ')
+          ..write(
+              'calibrationSessionsCompleted: $calibrationSessionsCompleted, ')
+          ..write('calibrationTargetSessions: $calibrationTargetSessions, ')
           ..write('unlockedMoveIds: $unlockedMoveIds')
           ..write(')'))
         .toString();
@@ -577,6 +686,8 @@ typedef $$UserProfilesTableCreateCompanionBuilder = UserProfilesCompanion
   Value<double> overheadPressFiveRm,
   Value<int> weeklyFrequency,
   Value<bool> isBeginnerMode,
+  Value<int> calibrationSessionsCompleted,
+  Value<int> calibrationTargetSessions,
   Value<String> unlockedMoveIds,
 });
 typedef $$UserProfilesTableUpdateCompanionBuilder = UserProfilesCompanion
@@ -590,6 +701,8 @@ typedef $$UserProfilesTableUpdateCompanionBuilder = UserProfilesCompanion
   Value<double> overheadPressFiveRm,
   Value<int> weeklyFrequency,
   Value<bool> isBeginnerMode,
+  Value<int> calibrationSessionsCompleted,
+  Value<int> calibrationTargetSessions,
   Value<String> unlockedMoveIds,
 });
 
@@ -633,6 +746,14 @@ class $$UserProfilesTableFilterComposer
 
   ColumnFilters<bool> get isBeginnerMode => $composableBuilder(
       column: $table.isBeginnerMode,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get calibrationSessionsCompleted => $composableBuilder(
+      column: $table.calibrationSessionsCompleted,
+      builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get calibrationTargetSessions => $composableBuilder(
+      column: $table.calibrationTargetSessions,
       builder: (column) => ColumnFilters(column));
 
   ColumnFilters<String> get unlockedMoveIds => $composableBuilder(
@@ -682,6 +803,14 @@ class $$UserProfilesTableOrderingComposer
       column: $table.isBeginnerMode,
       builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<int> get calibrationSessionsCompleted => $composableBuilder(
+      column: $table.calibrationSessionsCompleted,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get calibrationTargetSessions => $composableBuilder(
+      column: $table.calibrationTargetSessions,
+      builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<String> get unlockedMoveIds => $composableBuilder(
       column: $table.unlockedMoveIds,
       builder: (column) => ColumnOrderings(column));
@@ -723,6 +852,12 @@ class $$UserProfilesTableAnnotationComposer
   GeneratedColumn<bool> get isBeginnerMode => $composableBuilder(
       column: $table.isBeginnerMode, builder: (column) => column);
 
+  GeneratedColumn<int> get calibrationSessionsCompleted => $composableBuilder(
+      column: $table.calibrationSessionsCompleted, builder: (column) => column);
+
+  GeneratedColumn<int> get calibrationTargetSessions => $composableBuilder(
+      column: $table.calibrationTargetSessions, builder: (column) => column);
+
   GeneratedColumn<String> get unlockedMoveIds => $composableBuilder(
       column: $table.unlockedMoveIds, builder: (column) => column);
 }
@@ -762,6 +897,8 @@ class $$UserProfilesTableTableManager extends RootTableManager<
             Value<double> overheadPressFiveRm = const Value.absent(),
             Value<int> weeklyFrequency = const Value.absent(),
             Value<bool> isBeginnerMode = const Value.absent(),
+            Value<int> calibrationSessionsCompleted = const Value.absent(),
+            Value<int> calibrationTargetSessions = const Value.absent(),
             Value<String> unlockedMoveIds = const Value.absent(),
           }) =>
               UserProfilesCompanion(
@@ -774,6 +911,8 @@ class $$UserProfilesTableTableManager extends RootTableManager<
             overheadPressFiveRm: overheadPressFiveRm,
             weeklyFrequency: weeklyFrequency,
             isBeginnerMode: isBeginnerMode,
+            calibrationSessionsCompleted: calibrationSessionsCompleted,
+            calibrationTargetSessions: calibrationTargetSessions,
             unlockedMoveIds: unlockedMoveIds,
           ),
           createCompanionCallback: ({
@@ -786,6 +925,8 @@ class $$UserProfilesTableTableManager extends RootTableManager<
             Value<double> overheadPressFiveRm = const Value.absent(),
             Value<int> weeklyFrequency = const Value.absent(),
             Value<bool> isBeginnerMode = const Value.absent(),
+            Value<int> calibrationSessionsCompleted = const Value.absent(),
+            Value<int> calibrationTargetSessions = const Value.absent(),
             Value<String> unlockedMoveIds = const Value.absent(),
           }) =>
               UserProfilesCompanion.insert(
@@ -798,6 +939,8 @@ class $$UserProfilesTableTableManager extends RootTableManager<
             overheadPressFiveRm: overheadPressFiveRm,
             weeklyFrequency: weeklyFrequency,
             isBeginnerMode: isBeginnerMode,
+            calibrationSessionsCompleted: calibrationSessionsCompleted,
+            calibrationTargetSessions: calibrationTargetSessions,
             unlockedMoveIds: unlockedMoveIds,
           ),
           withReferenceMapper: (p0) => p0

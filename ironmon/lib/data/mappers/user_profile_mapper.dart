@@ -21,6 +21,8 @@ class UserProfileMapper {
       overheadPressFiveRm: entity.overheadPressFiveRm,
       weeklyFrequency: entity.weeklyFrequency,
       isBeginnerMode: entity.isBeginnerMode,
+      calibrationSessionsCompleted: entity.calibrationSessionsCompleted,
+      calibrationTargetSessions: entity.calibrationTargetSessions,
       unlockedMoveIds: _decodeIds(entity.unlockedMoveIds),
     );
   }
@@ -38,6 +40,9 @@ class UserProfileMapper {
       overheadPressFiveRm: Value(profile.overheadPressFiveRm),
       weeklyFrequency: Value(profile.weeklyFrequency),
       isBeginnerMode: Value(profile.isBeginnerMode),
+      calibrationSessionsCompleted:
+          Value(profile.calibrationSessionsCompleted),
+      calibrationTargetSessions: Value(profile.calibrationTargetSessions),
       unlockedMoveIds: Value(_encodeIds(profile.unlockedMoveIds)),
     );
   }
@@ -54,13 +59,21 @@ class UserProfileMapper {
       overheadPressFiveRm: Value(profile.overheadPressFiveRm),
       weeklyFrequency: Value(profile.weeklyFrequency),
       isBeginnerMode: Value(profile.isBeginnerMode),
+      calibrationSessionsCompleted:
+          Value(profile.calibrationSessionsCompleted),
+      calibrationTargetSessions: Value(profile.calibrationTargetSessions),
       unlockedMoveIds: Value(_encodeIds(profile.unlockedMoveIds)),
     );
   }
 
   static List<String> _decodeIds(String json) {
-    final decoded = jsonDecode(json) as List<dynamic>;
-    return decoded.cast<String>();
+    try {
+      final decoded = jsonDecode(json);
+      if (decoded is! List) return [];
+      return decoded.whereType<String>().toList();
+    } on Object catch (_) {
+      return [];
+    }
   }
 
   static String _encodeIds(List<String> ids) => jsonEncode(ids);

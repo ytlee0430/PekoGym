@@ -4,8 +4,14 @@ import 'package:drift/drift.dart';
 /// Stores player's character state, 5RM values, and preferences.
 @DataClassName('UserProfileEntity')
 class UserProfiles extends Table {
-  /// Auto-incremented primary key (always 1 for singleton profile).
-  IntColumn get id => integer().autoIncrement()();
+  /// Singleton primary key. [primaryKey] getter declares this as the
+  /// table-level PK; customConstraint enforces the singleton CHECK (id = 1).
+  IntColumn get id => integer()
+      .withDefault(const Constant(1))
+      .customConstraint('NOT NULL CHECK (id = 1)')();
+
+  @override
+  Set<Column> get primaryKey => {id};
 
   // --- Character Stats ---
 
@@ -43,6 +49,16 @@ class UserProfiles extends Table {
   /// Whether the player is in beginner auto-calibration mode.
   BoolColumn get isBeginnerMode =>
       boolean().withDefault(const Constant(false))();
+
+  // --- Calibration Progress (Story 1.3) ---
+
+  /// Number of sessions completed during beginner calibration.
+  IntColumn get calibrationSessionsCompleted =>
+      integer().withDefault(const Constant(0))();
+
+  /// Target number of calibration sessions (default 5).
+  IntColumn get calibrationTargetSessions =>
+      integer().withDefault(const Constant(5))();
 
   // --- Move Progression ---
 

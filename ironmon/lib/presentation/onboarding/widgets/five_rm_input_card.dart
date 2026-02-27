@@ -36,7 +36,10 @@ class FiveRmInputCard extends StatelessWidget {
             }
             final parsed = double.tryParse(value);
             if (parsed == null || parsed <= 0) {
-              return 'Must be greater than 0';
+              return 'Must be a valid number greater than 0';
+            }
+            if (parsed >= 1000) {
+              return 'Must be less than 1000 kg';
             }
             return null;
           },
