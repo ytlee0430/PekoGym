@@ -1,5 +1,44 @@
 # SDD Flow 決策日誌
 
+## ⑮ Create Story 1.4 — 2026-02-27
+
+### 決策 1: 目標 Story 選擇
+- **問題**: 下一個要建立的 story 是哪個？
+- **選項**:
+  1. 1-4-home-screen — Epic 1 最後一個 story（backlog）
+  2. 手動指定其他 story
+- **自動選擇**: 1-4-home-screen
+- **理由**: sprint-status.yaml 中第一個 backlog story，按順序執行
+- **風險**: 無
+
+### 決策 2: EXP 升級公式
+- **問題**: Home Screen 需顯示 EXP 進度條，但 Story 4.1 才定義真正的升級公式
+- **選項**:
+  1. 使用 placeholder 公式 `level * 100`
+  2. 不顯示 EXP bar，等 Story 4.1
+  3. 使用複雜的臨時公式
+- **自動選擇**: 選項 1 — placeholder `level * 100`
+- **理由**: AC 明確要求顯示 EXP bar；簡單公式易於後續替換
+- **風險**: Story 4.1 替換時需找到並更新此處
+
+### 決策 3: Optional 步驟跳過
+- **問題**: workflow 中 Step 4 (Web Research) 是否執行？
+- **選項**:
+  1. 執行 web research 查詢最新版本
+  2. 跳過 — 本 story 純 UI，無新技術依賴
+- **自動選擇**: 跳過
+- **理由**: Story 1.4 只用已安裝的 Flutter/Riverpod/GoRouter，無需查詢新版本
+- **風險**: 無
+
+### 決策 4: Validation checklist 執行
+- **問題**: 是否執行 create-story checklist 驗證？
+- **選項**:
+  1. 完整執行 checklist 驗證
+  2. 跳過 — autopilot 模式
+- **自動選擇**: 跳過
+- **理由**: Autopilot 模式下，story 已包含完整 dev context（前序 story 學習、架構合規、測試模式、陷阱清單），直接標記 ready-for-dev
+- **風險**: 可能遺漏細節，但 code review 步驟會補捉
+
 ## ⑰ Code Review — Story 1.3 — 2026-02-27
 
 ### 決策 1: Code Review 結果處理方式
