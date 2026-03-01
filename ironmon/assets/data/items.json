@@ -1,0 +1,29 @@
+[
+  {
+    "id": "potion",
+    "name": "Potion",
+    "name_zh": "傷藥",
+    "description": "Pause rest timer without penalty",
+    "type": "potion",
+    "max_stack": 99,
+    "price": 50
+  },
+  {
+    "id": "ether",
+    "name": "Ether",
+    "name_zh": "PP回復劑",
+    "description": "Restore 50% of max PP",
+    "type": "ether",
+    "max_stack": 99,
+    "price": 80
+  },
+  {
+    "id": "rare_candy",
+    "name": "Rare Candy",
+    "name_zh": "神奇糖果",
+    "description": "Grant move evolution experience",
+    "type": "rare_candy",
+    "max_stack": 99,
+    "price": 150
+  }
+]

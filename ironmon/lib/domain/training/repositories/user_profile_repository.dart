@@ -24,4 +24,11 @@ abstract class UserProfileRepository {
   Future<Result<UserProfile, Exception>> updateCalibration(
     UserProfile profile,
   );
+
+  /// Atomically updates a single 5RM field for
+  /// the given muscle type (NFR10).
+  Future<Result<void, Exception>> updateFiveRm(
+    String muscleField,
+    double newValue,
+  );
 }

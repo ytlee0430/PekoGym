@@ -65,4 +65,32 @@ class UserProfiles extends Table {
   /// JSON-encoded list of unlocked move IDs (e.g. '["push_up"]').
   TextColumn get unlockedMoveIds =>
       text().withDefault(const Constant('[]'))();
+
+  // --- PP (Stamina) System (Story 6.1) ---
+
+  /// Maximum PP (stamina). Derived: 100 + level * 10.
+  IntColumn get maxPp =>
+      integer().withDefault(const Constant(110))();
+
+  /// Current PP (stamina). Deducted when moves are used.
+  IntColumn get currentPp =>
+      integer().withDefault(const Constant(110))();
+
+  // --- Inventory (Story 6.2) ---
+
+  /// Number of Potions held.
+  IntColumn get potionCount =>
+      integer().withDefault(const Constant(0))();
+
+  /// Number of Ethers held.
+  IntColumn get etherCount =>
+      integer().withDefault(const Constant(0))();
+
+  /// Number of Rare Candies held.
+  IntColumn get rareCandyCount =>
+      integer().withDefault(const Constant(0))();
+
+  /// In-game currency balance.
+  IntColumn get coins =>
+      integer().withDefault(const Constant(0))();
 }

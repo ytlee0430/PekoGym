@@ -24,6 +24,12 @@ class UserProfileMapper {
       calibrationSessionsCompleted: entity.calibrationSessionsCompleted,
       calibrationTargetSessions: entity.calibrationTargetSessions,
       unlockedMoveIds: _decodeIds(entity.unlockedMoveIds),
+      maxPp: entity.maxPp,
+      currentPp: entity.currentPp,
+      potionCount: entity.potionCount,
+      etherCount: entity.etherCount,
+      rareCandyCount: entity.rareCandyCount,
+      coins: entity.coins,
     );
   }
 
@@ -44,6 +50,12 @@ class UserProfileMapper {
           Value(profile.calibrationSessionsCompleted),
       calibrationTargetSessions: Value(profile.calibrationTargetSessions),
       unlockedMoveIds: Value(_encodeIds(profile.unlockedMoveIds)),
+      maxPp: Value(profile.maxPp),
+      currentPp: Value(profile.currentPp),
+      potionCount: Value(profile.potionCount),
+      etherCount: Value(profile.etherCount),
+      rareCandyCount: Value(profile.rareCandyCount),
+      coins: Value(profile.coins),
     );
   }
 
@@ -63,6 +75,12 @@ class UserProfileMapper {
           Value(profile.calibrationSessionsCompleted),
       calibrationTargetSessions: Value(profile.calibrationTargetSessions),
       unlockedMoveIds: Value(_encodeIds(profile.unlockedMoveIds)),
+      maxPp: Value(profile.maxPp),
+      currentPp: Value(profile.currentPp),
+      potionCount: Value(profile.potionCount),
+      etherCount: Value(profile.etherCount),
+      rareCandyCount: Value(profile.rareCandyCount),
+      coins: Value(profile.coins),
     );
   }
 

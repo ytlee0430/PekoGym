@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:ironmon/presentation/shared/ironmon_theme.dart';
 import 'package:ironmon/router/app_router.dart';
 
 /// App entry point — initializes Riverpod and launches [IronMonApp]
@@ -20,10 +21,7 @@ class IronMonApp extends ConsumerWidget {
     return MaterialApp.router(
       title: 'IronMon',
       routerConfig: router,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
-      ),
+      theme: IronMonTheme.dark(),
     );
   }
 }

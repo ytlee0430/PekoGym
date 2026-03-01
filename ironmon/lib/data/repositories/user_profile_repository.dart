@@ -1,3 +1,4 @@
+import 'package:drift/drift.dart';
 import 'package:ironmon/data/local/app_database.dart';
 import 'package:ironmon/data/mappers/user_profile_mapper.dart';
 import 'package:ironmon/domain/shared/result.dart';
@@ -80,6 +81,44 @@ class DriftUserProfileRepository implements UserProfileRepository {
         );
       }
       return Success(UserProfileMapper.toDomain(updated));
+    } on Exception catch (e) {
+      return Failure(e);
+    }
+  }
+
+  @override
+  Future<Result<void, Exception>> updateFiveRm(
+    String muscleField,
+    double newValue,
+  ) async {
+    try {
+      await _db.transaction(() async {
+        final companion = switch (muscleField) {
+          'squat' => UserProfilesCompanion(
+              squatFiveRm: Value(newValue),
+            ),
+          'benchPress' => UserProfilesCompanion(
+              benchPressFiveRm: Value(newValue),
+            ),
+          'deadlift' => UserProfilesCompanion(
+              deadliftFiveRm: Value(newValue),
+            ),
+          'overheadPress' =>
+            UserProfilesCompanion(
+              overheadPressFiveRm:
+                  Value(newValue),
+            ),
+          _ => throw Exception(
+              'Unknown muscle field: $muscleField',
+            ),
+        };
+        await (_db.update(_db.userProfiles)
+              ..where(
+                (t) => t.id.equals(1),
+              ))
+            .write(companion);
+      });
+      return const Success(null);
     } on Exception catch (e) {
       return Failure(e);
     }

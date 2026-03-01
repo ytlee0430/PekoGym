@@ -19,6 +19,12 @@ void main() {
       calibrationSessionsCompleted: 2,
       calibrationTargetSessions: 5,
       unlockedMoveIds: '["push_up","squat"]',
+      maxPp: 150,
+      currentPp: 120,
+      potionCount: 3,
+      etherCount: 1,
+      rareCandyCount: 2,
+      coins: 500,
     );
 
     group('toDomain', () {
@@ -121,6 +127,13 @@ void main() {
           calibrationTargetSessions:
               companion.calibrationTargetSessions.value,
           unlockedMoveIds: companion.unlockedMoveIds.value,
+          maxPp: companion.maxPp.value,
+          currentPp: companion.currentPp.value,
+          potionCount: companion.potionCount.value,
+          etherCount: companion.etherCount.value,
+          rareCandyCount:
+              companion.rareCandyCount.value,
+          coins: companion.coins.value,
         );
         final domain = UserProfileMapper.toDomain(reconstructed);
         expect(domain.calibrationSessionsCompleted, 3);

@@ -19,6 +19,12 @@ class UserProfile {
     this.calibrationSessionsCompleted = 0,
     this.calibrationTargetSessions = 5,
     this.unlockedMoveIds = const [],
+    this.maxPp = 110,
+    this.currentPp = 110,
+    this.potionCount = 0,
+    this.etherCount = 0,
+    this.rareCandyCount = 0,
+    this.coins = 0,
   });
 
   /// Database ID (always 1 for singleton pattern).
@@ -58,6 +64,24 @@ class UserProfile {
   /// List of unlocked move IDs.
   final List<String> unlockedMoveIds;
 
+  /// Maximum PP (stamina). Derived: 100 + level * 10.
+  final int maxPp;
+
+  /// Current PP (stamina). Deducted when moves are used.
+  final int currentPp;
+
+  /// Number of Potions held.
+  final int potionCount;
+
+  /// Number of Ethers held.
+  final int etherCount;
+
+  /// Number of Rare Candies held.
+  final int rareCandyCount;
+
+  /// In-game currency balance.
+  final int coins;
+
   /// Returns a copy of this profile with updated fields.
   UserProfile copyWith({
     int? id,
@@ -72,6 +96,12 @@ class UserProfile {
     int? calibrationSessionsCompleted,
     int? calibrationTargetSessions,
     List<String>? unlockedMoveIds,
+    int? maxPp,
+    int? currentPp,
+    int? potionCount,
+    int? etherCount,
+    int? rareCandyCount,
+    int? coins,
   }) {
     return UserProfile(
       id: id ?? this.id,
@@ -90,6 +120,13 @@ class UserProfile {
       unlockedMoveIds: unlockedMoveIds != null
           ? List<String>.unmodifiable(unlockedMoveIds)
           : this.unlockedMoveIds,
+      maxPp: maxPp ?? this.maxPp,
+      currentPp: currentPp ?? this.currentPp,
+      potionCount: potionCount ?? this.potionCount,
+      etherCount: etherCount ?? this.etherCount,
+      rareCandyCount:
+          rareCandyCount ?? this.rareCandyCount,
+      coins: coins ?? this.coins,
     );
   }
 
@@ -110,7 +147,13 @@ class UserProfile {
             calibrationSessionsCompleted &&
         other.calibrationTargetSessions == calibrationTargetSessions &&
         const ListEquality<String>()
-            .equals(other.unlockedMoveIds, unlockedMoveIds);
+            .equals(other.unlockedMoveIds, unlockedMoveIds) &&
+        other.maxPp == maxPp &&
+        other.currentPp == currentPp &&
+        other.potionCount == potionCount &&
+        other.etherCount == etherCount &&
+        other.rareCandyCount == rareCandyCount &&
+        other.coins == coins;
   }
 
   @override
@@ -127,6 +170,12 @@ class UserProfile {
         calibrationSessionsCompleted,
         calibrationTargetSessions,
         const ListEquality<String>().hash(unlockedMoveIds),
+        maxPp,
+        currentPp,
+        potionCount,
+        etherCount,
+        rareCandyCount,
+        coins,
       );
 
   @override
@@ -140,6 +189,9 @@ class UserProfile {
         'beginner: $isBeginnerMode, '
         'calibSessions: $calibrationSessionsCompleted/'
         '$calibrationTargetSessions, '
-        'unlocks: $unlockedMoveIds)';
+        'unlocks: $unlockedMoveIds, '
+        'pp: $currentPp/$maxPp, '
+        'inv: p=$potionCount e=$etherCount '
+        'rc=$rareCandyCount coins=$coins)';
   }
 }
