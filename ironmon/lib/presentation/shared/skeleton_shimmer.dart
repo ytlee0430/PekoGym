@@ -15,68 +15,12 @@ class SkeletonShimmer extends StatefulWidget {
 
   /// The child widget to apply shimmer effect to.
   final Widget child;
-  
+
   /// Base color of the skeleton.
   final Color? baseColor;
-  
+
   /// Highlight color of the shimmer effect.
   final Color? highlightColor;
-
-  @override
-  State<SkeletonShimmer> createState() => _SkeletonShimmerState();
-}
-
-class _SkeletonShimmerState extends State<SkeletonShimmer>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
-  late final Animation<double> _animation;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 1500),
-      vsync: this,
-    )..repeat();
-    
-    _animation = Tween<double>(
-      begin: -2.0,
-      end: 2.0,
-    ).animate(_controller);
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final baseColor = widget.baseColor ?? IronMonColors.surfaceVariant;
-    final highlightColor = widget.highlightColor ?? IronMonColors.onSurface.withValues(alpha: 0.1);
-    
-    return AnimatedBuilder(
-      animation: _animation,
-      builder: (context, child) {
-        return ShaderMask(
-          shaderCallback: (bounds) {
-            return LinearGradient(
-              begin: Alignment(-1.0 + _animation.value, 0.0),
-              end: Alignment(1.0 + _animation.value, 0.0),
-              colors: [
-                baseColor,
-                highlightColor,
-                baseColor,
-              ],
-              stops: const [0.0, 0.5, 1.0],
-            ).createShader(bounds);
-          },
-          child: widget.child,
-        );
-      },
-    );
-  }
 
   /// Creates a card-shaped skeleton placeholder.
   factory SkeletonShimmer.card({
@@ -144,6 +88,64 @@ class _SkeletonShimmerState extends State<SkeletonShimmer>
           shape: BoxShape.circle,
         ),
       ),
+    );
+  }
+
+  @override
+  State<SkeletonShimmer> createState() => _SkeletonShimmerState();
+}
+
+class _SkeletonShimmerState extends State<SkeletonShimmer>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 1500),
+      vsync: this,
+    )..repeat();
+
+    _animation = Tween<double>(
+      begin: -2.0,
+      end: 2.0,
+    ).animate(_controller);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final baseColor =
+        widget.baseColor ?? IronMonColors.surfaceVariant;
+    final highlightColor = widget.highlightColor ??
+        IronMonColors.onSurface.withValues(alpha: 0.1);
+
+    return AnimatedBuilder(
+      animation: _animation,
+      builder: (context, child) {
+        return ShaderMask(
+          shaderCallback: (bounds) {
+            return LinearGradient(
+              begin: Alignment(-1.0 + _animation.value, 0.0),
+              end: Alignment(1.0 + _animation.value, 0.0),
+              colors: [
+                baseColor,
+                highlightColor,
+                baseColor,
+              ],
+              stops: const [0.0, 0.5, 1.0],
+            ).createShader(bounds);
+          },
+          child: widget.child,
+        );
+      },
     );
   }
 }

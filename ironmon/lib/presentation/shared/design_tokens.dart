@@ -24,6 +24,18 @@ abstract final class IronMonColors {
   /// Secondary accent (EXP bar, important numbers).
   static const secondary = Color(0xFFF0C040);
 
+  /// Text on secondary color.
+  static const onSecondary = Color(0xFF000000);
+
+  /// Primary color container (selected card background).
+  static const primaryContainer = Color(0xFF1F3552);
+
+  /// Text/icon on primary container.
+  static const onPrimaryContainer = Color(0xFF58A6FF);
+
+  /// Border / divider color.
+  static const outline = Color(0xFF30363D);
+
   /// Error / low HP color.
   static const error = Color(0xFFF85149);
 

@@ -25,6 +25,7 @@ class UserProfile {
     this.etherCount = 0,
     this.rareCandyCount = 0,
     this.coins = 0,
+    this.exerciseFiveRms = const {},
   });
 
   /// Database ID (always 1 for singleton pattern).
@@ -82,6 +83,10 @@ class UserProfile {
   /// In-game currency balance.
   final int coins;
 
+  /// Per-exercise 5RM overrides, keyed by move ID (e.g. 'chest-2').
+  /// Populated during experienced-mode onboarding.
+  final Map<String, double> exerciseFiveRms;
+
   /// Returns a copy of this profile with updated fields.
   UserProfile copyWith({
     int? id,
@@ -102,6 +107,7 @@ class UserProfile {
     int? etherCount,
     int? rareCandyCount,
     int? coins,
+    Map<String, double>? exerciseFiveRms,
   }) {
     return UserProfile(
       id: id ?? this.id,
@@ -127,6 +133,7 @@ class UserProfile {
       rareCandyCount:
           rareCandyCount ?? this.rareCandyCount,
       coins: coins ?? this.coins,
+      exerciseFiveRms: exerciseFiveRms ?? this.exerciseFiveRms,
     );
   }
 
@@ -153,7 +160,9 @@ class UserProfile {
         other.potionCount == potionCount &&
         other.etherCount == etherCount &&
         other.rareCandyCount == rareCandyCount &&
-        other.coins == coins;
+        other.coins == coins &&
+        const MapEquality<String, double>()
+            .equals(other.exerciseFiveRms, exerciseFiveRms);
   }
 
   @override
@@ -176,6 +185,7 @@ class UserProfile {
         etherCount,
         rareCandyCount,
         coins,
+        const MapEquality<String, double>().hash(exerciseFiveRms),
       );
 
   @override
@@ -192,6 +202,7 @@ class UserProfile {
         'unlocks: $unlockedMoveIds, '
         'pp: $currentPp/$maxPp, '
         'inv: p=$potionCount e=$etherCount '
-        'rc=$rareCandyCount coins=$coins)';
+        'rc=$rareCandyCount coins=$coins, '
+        'exerciseFiveRms: $exerciseFiveRms)';
   }
 }

@@ -25,6 +25,7 @@ void main() {
       etherCount: 1,
       rareCandyCount: 2,
       coins: 500,
+      exerciseFiveRms: '{}',
     );
 
     group('toDomain', () {
@@ -134,6 +135,7 @@ void main() {
           rareCandyCount:
               companion.rareCandyCount.value,
           coins: companion.coins.value,
+          exerciseFiveRms: companion.exerciseFiveRms.value,
         );
         final domain = UserProfileMapper.toDomain(reconstructed);
         expect(domain.calibrationSessionsCompleted, 3);

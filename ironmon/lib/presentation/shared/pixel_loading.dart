@@ -1,6 +1,7 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:ironmon/presentation/shared/design_tokens.dart';
-import 'package:ironmon/presentation/shared/pixel_text.dart';
 
 /// Pixel-style loading spinner with optional message.
 ///
@@ -15,7 +16,7 @@ class PixelLoading extends StatefulWidget {
 
   /// Optional message to display below the spinner.
   final String? message;
-  
+
   /// Size of the spinner.
   final double size;
 
@@ -35,7 +36,7 @@ class _PixelLoadingState extends State<PixelLoading>
       duration: const Duration(milliseconds: 1200),
       vsync: this,
     )..repeat();
-    
+
     // Create staggered animations for each block
     _animations = List.generate(4, (index) {
       return Tween<double>(
@@ -79,7 +80,7 @@ class _PixelLoadingState extends State<PixelLoading>
                     final progress = _animations[i].value;
                     final offset = _calculateOffset(i, progress);
                     final scale = 0.5 + (progress * 0.5);
-                    
+
                     return Transform.translate(
                       offset: offset,
                       child: Transform.scale(
@@ -91,7 +92,8 @@ class _PixelLoadingState extends State<PixelLoading>
                             color: IronMonColors.primary,
                             boxShadow: [
                               BoxShadow(
-                                color: IronMonColors.primary.withValues(alpha: 0.3),
+                                color: IronMonColors.primary
+                                    .withValues(alpha: 0.3),
                                 blurRadius: 4,
                                 offset: const Offset(0, 2),
                               ),
@@ -105,12 +107,14 @@ class _PixelLoadingState extends State<PixelLoading>
             ],
           ),
         ),
-        
         if (widget.message != null) ...[
           const SizedBox(height: 16),
-          PixelText.body(
+          Text(
             widget.message!,
-            color: IronMonColors.onSurfaceVariant,
+            style: const TextStyle(
+              color: IronMonColors.onSurfaceVariant,
+            ),
+            textAlign: TextAlign.center,
           ),
         ],
       ],
@@ -119,23 +123,12 @@ class _PixelLoadingState extends State<PixelLoading>
 
   Offset _calculateOffset(int index, double progress) {
     final radius = widget.size * 0.2;
-    final angle = (progress * 2 * 3.14159) + (index * 3.14159 / 2);
-    
+    final angle =
+        (progress * 2 * math.pi) + (index * math.pi / 2);
+
     return Offset(
-      radius * cos(angle),
-      radius * sin(angle),
+      radius * math.cos(angle),
+      radius * math.sin(angle),
     );
   }
 }
-
-// Import math functions
-double cos(double radians) => radians.cos();
-double sin(double radians) => radians.sin();
-
-extension on double {
-  double cos() => math.cos(this);
-  double sin() => math.sin(this);
-}
-
-// Import math library
-import 'dart:math' as math;

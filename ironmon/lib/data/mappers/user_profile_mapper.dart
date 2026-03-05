@@ -30,6 +30,7 @@ class UserProfileMapper {
       etherCount: entity.etherCount,
       rareCandyCount: entity.rareCandyCount,
       coins: entity.coins,
+      exerciseFiveRms: _decodeExerciseFiveRms(entity.exerciseFiveRms),
     );
   }
 
@@ -56,6 +57,7 @@ class UserProfileMapper {
       etherCount: Value(profile.etherCount),
       rareCandyCount: Value(profile.rareCandyCount),
       coins: Value(profile.coins),
+      exerciseFiveRms: Value(_encodeExerciseFiveRms(profile.exerciseFiveRms)),
     );
   }
 
@@ -81,6 +83,7 @@ class UserProfileMapper {
       etherCount: Value(profile.etherCount),
       rareCandyCount: Value(profile.rareCandyCount),
       coins: Value(profile.coins),
+      exerciseFiveRms: Value(_encodeExerciseFiveRms(profile.exerciseFiveRms)),
     );
   }
 
@@ -95,4 +98,18 @@ class UserProfileMapper {
   }
 
   static String _encodeIds(List<String> ids) => jsonEncode(ids);
+
+  static Map<String, double> _decodeExerciseFiveRms(String json) {
+    try {
+      final decoded = jsonDecode(json);
+      if (decoded is! Map) return {};
+      return decoded
+          .map((k, v) => MapEntry(k as String, (v as num).toDouble()));
+    } on Object catch (_) {
+      return {};
+    }
+  }
+
+  static String _encodeExerciseFiveRms(Map<String, double> map) =>
+      jsonEncode(map);
 }

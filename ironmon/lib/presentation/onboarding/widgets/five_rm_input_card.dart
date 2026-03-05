@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:ironmon/domain/type_system/muscle_type.dart';
 import 'package:ironmon/presentation/shared/design_tokens.dart';
 import 'package:ironmon/presentation/shared/pixel_text.dart';
@@ -14,6 +15,8 @@ class FiveRmInputCard extends StatelessWidget {
     required this.value,
     required this.onChanged,
     this.validator,
+    this.exerciseName,
+    this.exerciseSubtitle,
     super.key,
   });
 
@@ -29,6 +32,12 @@ class FiveRmInputCard extends StatelessWidget {
   /// Optional validator for the input field.
   final String? Function(double?)? validator;
 
+  /// Optional override for the display name (e.g. "Barbell Bench Press").
+  final String? exerciseName;
+
+  /// Optional override for the subtitle (e.g. "Primary chest compound").
+  final String? exerciseSubtitle;
+
   @override
   Widget build(BuildContext context) {
     return Card(
@@ -40,12 +49,12 @@ class FiveRmInputCard extends StatelessWidget {
           children: [
             // Exercise name and type
             PixelText.h2(
-              muscleType.displayName,
+              exerciseName ?? muscleType.displayName,
               color: IronMonColors.colorForType(muscleType),
             ),
             const SizedBox(height: 8),
             Text(
-              muscleType.elementName,
+              exerciseSubtitle ?? muscleType.elementName,
               style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                 color: IronMonColors.onSurfaceVariant,
               ),
@@ -154,7 +163,7 @@ class FiveRmInputCard extends StatelessWidget {
       MuscleType.back => Icons.accessibility_new,
       MuscleType.legs => Icons.directions_run,
       MuscleType.shoulders => Icons.sports_gymnastics,
-      MuscleType.core => Icons.sports_martial_arts,
+      MuscleType.arms => Icons.sports_martial_arts,
     };
   }
 }

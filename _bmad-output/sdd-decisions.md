@@ -1,5 +1,42 @@
 # SDD Flow 決策日誌
 
+## Per-Exercise 5RM Estimation — 2026-03-05
+
+### 決策 1: 4 標準複合動作 vs 5 肌群輸入
+- **問題**: 如何讓初學者以外的用戶設定重量？
+- **選項**:
+  1. 繼續用 5 個肌群各輸一個值
+  2. 改為 4 個標準複合動作（臥推/划船/深蹲/肩推），其餘自動估算
+- **選擇**: 選項 2
+- **理由**: 大多數用戶只知道這 4 個主要動作的重量；其餘 11 個動作可由比例係數估算
+- **結果**: 新增 `ExerciseWeightEstimator` 靜態服務，估算後可在調整頁面微調
+
+### 決策 2: exerciseFiveRms 儲存方式
+- **問題**: `Map<String, double>` 如何存入 SQLite？
+- **選項**:
+  1. 新增 15 個獨立欄位（每個動作一欄）
+  2. JSON 字串存入單一 TEXT 欄位
+- **選擇**: 選項 2（JSON TEXT）
+- **理由**: 彈性高，未來新增動作無需 migration；保持與 `unlockedMoveIds` 相同模式
+- **風險**: 無法用 SQL 直接查詢單一動作值（目前不需要）
+
+### 決策 3: deadliftFiveRm 欄位名稱保留
+- **問題**: DB 欄位叫 `deadliftFiveRm` 但 UI 改稱 "Barbell Row"，是否重新命名欄位？
+- **選項**:
+  1. 加 migration 重新命名 column
+  2. 保留 column 名稱不變，只改 UI 標籤
+- **選擇**: 選項 2
+- **理由**: migration 成本高、風險高；column 名稱是 internal detail，UI 標籤才是用戶看到的
+- **結果**: `deadliftFiveRm` 欄位保留；所有 UI 顯示 "Barbell Row"
+
+### 決策 4: Beginner Mode 的 exerciseFiveRms 處理
+- **問題**: Beginner mode 用戶不輸入 5RM，`exerciseFiveRms` 應如何處理？
+- **選項**:
+  1. 儲存空 map `{}`（依賴 `getFiveRmForType` fallback）
+  2. 用預設值自動填充 15 個動作
+- **選擇**: 選項 1（空 map）
+- **理由**: Beginner mode 用自動校準，不應假設初始重量；`getFiveRmForExercise` 已有 fallback 機制
+
 ## ⑮ Create Story 1.4 — 2026-02-27
 
 ### 決策 1: 目標 Story 選擇

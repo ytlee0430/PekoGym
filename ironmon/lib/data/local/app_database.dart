@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
+import 'package:flutter/foundation.dart';
 import 'package:ironmon/data/local/tables/battle_state_table.dart';
 import 'package:ironmon/data/local/tables/exercise_set_table.dart';
 import 'package:ironmon/data/local/tables/user_profile_table.dart';
@@ -24,7 +25,7 @@ class AppDatabase extends _$AppDatabase {
       : super(executor ?? _openConnection());
 
   @override
-  int get schemaVersion => 8;
+  int get schemaVersion => 9;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -83,10 +84,30 @@ class AppDatabase extends _$AppDatabase {
               userProfiles.coins,
             );
           }
+          if (from < 9) {
+            await m.addColumn(
+              userProfiles,
+              userProfiles.exerciseFiveRms,
+            );
+          }
         },
       );
 
   static QueryExecutor _openConnection() {
-    return driftDatabase(name: 'ironmon_db');
+    return driftDatabase(
+      name: 'ironmon_db',
+      web: DriftWebOptions(
+        sqlite3Wasm: Uri.parse('sqlite3.wasm'),
+        driftWorker: Uri.parse('drift_worker.dart.js'),
+        onResult: (result) {
+          if (result.missingFeatures.isNotEmpty) {
+            debugPrint(
+              'drift_flutter: using ${result.chosenImplementation} due to '
+              'missing browser features: ${result.missingFeatures}',
+            );
+          }
+        },
+      ),
+    );
   }
 }

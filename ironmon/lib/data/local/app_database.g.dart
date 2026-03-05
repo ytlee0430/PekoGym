@@ -152,6 +152,14 @@ class $UserProfilesTable extends UserProfiles
       type: DriftSqlType.int,
       requiredDuringInsert: false,
       defaultValue: const Constant(0));
+  static const VerificationMeta _exerciseFiveRmsMeta =
+      const VerificationMeta('exerciseFiveRms');
+  @override
+  late final GeneratedColumn<String> exerciseFiveRms = GeneratedColumn<String>(
+      'exercise_five_rms', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultValue: const Constant('{}'));
   @override
   List<GeneratedColumn> get $columns => [
         id,
@@ -171,7 +179,8 @@ class $UserProfilesTable extends UserProfiles
         potionCount,
         etherCount,
         rareCandyCount,
-        coins
+        coins,
+        exerciseFiveRms
       ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -282,6 +291,12 @@ class $UserProfilesTable extends UserProfiles
       context.handle(
           _coinsMeta, coins.isAcceptableOrUnknown(data['coins']!, _coinsMeta));
     }
+    if (data.containsKey('exercise_five_rms')) {
+      context.handle(
+          _exerciseFiveRmsMeta,
+          exerciseFiveRms.isAcceptableOrUnknown(
+              data['exercise_five_rms']!, _exerciseFiveRmsMeta));
+    }
     return context;
   }
 
@@ -330,6 +345,8 @@ class $UserProfilesTable extends UserProfiles
           .read(DriftSqlType.int, data['${effectivePrefix}rare_candy_count'])!,
       coins: attachedDatabase.typeMapping
           .read(DriftSqlType.int, data['${effectivePrefix}coins'])!,
+      exerciseFiveRms: attachedDatabase.typeMapping.read(
+          DriftSqlType.string, data['${effectivePrefix}exercise_five_rms'])!,
     );
   }
 
@@ -395,6 +412,9 @@ class UserProfileEntity extends DataClass
 
   /// In-game currency balance.
   final int coins;
+
+  /// JSON-encoded map of per-exercise 5RM overrides keyed by move ID.
+  final String exerciseFiveRms;
   const UserProfileEntity(
       {required this.id,
       required this.level,
@@ -413,7 +433,8 @@ class UserProfileEntity extends DataClass
       required this.potionCount,
       required this.etherCount,
       required this.rareCandyCount,
-      required this.coins});
+      required this.coins,
+      required this.exerciseFiveRms});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -437,6 +458,7 @@ class UserProfileEntity extends DataClass
     map['ether_count'] = Variable<int>(etherCount);
     map['rare_candy_count'] = Variable<int>(rareCandyCount);
     map['coins'] = Variable<int>(coins);
+    map['exercise_five_rms'] = Variable<String>(exerciseFiveRms);
     return map;
   }
 
@@ -460,6 +482,7 @@ class UserProfileEntity extends DataClass
       etherCount: Value(etherCount),
       rareCandyCount: Value(rareCandyCount),
       coins: Value(coins),
+      exerciseFiveRms: Value(exerciseFiveRms),
     );
   }
 
@@ -488,6 +511,7 @@ class UserProfileEntity extends DataClass
       etherCount: serializer.fromJson<int>(json['etherCount']),
       rareCandyCount: serializer.fromJson<int>(json['rareCandyCount']),
       coins: serializer.fromJson<int>(json['coins']),
+      exerciseFiveRms: serializer.fromJson<String>(json['exerciseFiveRms']),
     );
   }
   @override
@@ -514,6 +538,7 @@ class UserProfileEntity extends DataClass
       'etherCount': serializer.toJson<int>(etherCount),
       'rareCandyCount': serializer.toJson<int>(rareCandyCount),
       'coins': serializer.toJson<int>(coins),
+      'exerciseFiveRms': serializer.toJson<String>(exerciseFiveRms),
     };
   }
 
@@ -535,7 +560,8 @@ class UserProfileEntity extends DataClass
           int? potionCount,
           int? etherCount,
           int? rareCandyCount,
-          int? coins}) =>
+          int? coins,
+          String? exerciseFiveRms}) =>
       UserProfileEntity(
         id: id ?? this.id,
         level: level ?? this.level,
@@ -557,6 +583,7 @@ class UserProfileEntity extends DataClass
         etherCount: etherCount ?? this.etherCount,
         rareCandyCount: rareCandyCount ?? this.rareCandyCount,
         coins: coins ?? this.coins,
+        exerciseFiveRms: exerciseFiveRms ?? this.exerciseFiveRms,
       );
   UserProfileEntity copyWithCompanion(UserProfilesCompanion data) {
     return UserProfileEntity(
@@ -601,6 +628,9 @@ class UserProfileEntity extends DataClass
           ? data.rareCandyCount.value
           : this.rareCandyCount,
       coins: data.coins.present ? data.coins.value : this.coins,
+      exerciseFiveRms: data.exerciseFiveRms.present
+          ? data.exerciseFiveRms.value
+          : this.exerciseFiveRms,
     );
   }
 
@@ -625,7 +655,8 @@ class UserProfileEntity extends DataClass
           ..write('potionCount: $potionCount, ')
           ..write('etherCount: $etherCount, ')
           ..write('rareCandyCount: $rareCandyCount, ')
-          ..write('coins: $coins')
+          ..write('coins: $coins, ')
+          ..write('exerciseFiveRms: $exerciseFiveRms')
           ..write(')'))
         .toString();
   }
@@ -649,7 +680,8 @@ class UserProfileEntity extends DataClass
       potionCount,
       etherCount,
       rareCandyCount,
-      coins);
+      coins,
+      exerciseFiveRms);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -672,7 +704,8 @@ class UserProfileEntity extends DataClass
           other.potionCount == this.potionCount &&
           other.etherCount == this.etherCount &&
           other.rareCandyCount == this.rareCandyCount &&
-          other.coins == this.coins);
+          other.coins == this.coins &&
+          other.exerciseFiveRms == this.exerciseFiveRms);
 }
 
 class UserProfilesCompanion extends UpdateCompanion<UserProfileEntity> {
@@ -694,6 +727,7 @@ class UserProfilesCompanion extends UpdateCompanion<UserProfileEntity> {
   final Value<int> etherCount;
   final Value<int> rareCandyCount;
   final Value<int> coins;
+  final Value<String> exerciseFiveRms;
   const UserProfilesCompanion({
     this.id = const Value.absent(),
     this.level = const Value.absent(),
@@ -713,6 +747,7 @@ class UserProfilesCompanion extends UpdateCompanion<UserProfileEntity> {
     this.etherCount = const Value.absent(),
     this.rareCandyCount = const Value.absent(),
     this.coins = const Value.absent(),
+    this.exerciseFiveRms = const Value.absent(),
   });
   UserProfilesCompanion.insert({
     this.id = const Value.absent(),
@@ -733,6 +768,7 @@ class UserProfilesCompanion extends UpdateCompanion<UserProfileEntity> {
     this.etherCount = const Value.absent(),
     this.rareCandyCount = const Value.absent(),
     this.coins = const Value.absent(),
+    this.exerciseFiveRms = const Value.absent(),
   });
   static Insertable<UserProfileEntity> custom({
     Expression<int>? id,
@@ -753,6 +789,7 @@ class UserProfilesCompanion extends UpdateCompanion<UserProfileEntity> {
     Expression<int>? etherCount,
     Expression<int>? rareCandyCount,
     Expression<int>? coins,
+    Expression<String>? exerciseFiveRms,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -776,6 +813,7 @@ class UserProfilesCompanion extends UpdateCompanion<UserProfileEntity> {
       if (etherCount != null) 'ether_count': etherCount,
       if (rareCandyCount != null) 'rare_candy_count': rareCandyCount,
       if (coins != null) 'coins': coins,
+      if (exerciseFiveRms != null) 'exercise_five_rms': exerciseFiveRms,
     });
   }
 
@@ -797,7 +835,8 @@ class UserProfilesCompanion extends UpdateCompanion<UserProfileEntity> {
       Value<int>? potionCount,
       Value<int>? etherCount,
       Value<int>? rareCandyCount,
-      Value<int>? coins}) {
+      Value<int>? coins,
+      Value<String>? exerciseFiveRms}) {
     return UserProfilesCompanion(
       id: id ?? this.id,
       level: level ?? this.level,
@@ -819,6 +858,7 @@ class UserProfilesCompanion extends UpdateCompanion<UserProfileEntity> {
       etherCount: etherCount ?? this.etherCount,
       rareCandyCount: rareCandyCount ?? this.rareCandyCount,
       coins: coins ?? this.coins,
+      exerciseFiveRms: exerciseFiveRms ?? this.exerciseFiveRms,
     );
   }
 
@@ -882,6 +922,9 @@ class UserProfilesCompanion extends UpdateCompanion<UserProfileEntity> {
     if (coins.present) {
       map['coins'] = Variable<int>(coins.value);
     }
+    if (exerciseFiveRms.present) {
+      map['exercise_five_rms'] = Variable<String>(exerciseFiveRms.value);
+    }
     return map;
   }
 
@@ -906,7 +949,8 @@ class UserProfilesCompanion extends UpdateCompanion<UserProfileEntity> {
           ..write('potionCount: $potionCount, ')
           ..write('etherCount: $etherCount, ')
           ..write('rareCandyCount: $rareCandyCount, ')
-          ..write('coins: $coins')
+          ..write('coins: $coins, ')
+          ..write('exerciseFiveRms: $exerciseFiveRms')
           ..write(')'))
         .toString();
   }
@@ -2629,6 +2673,7 @@ typedef $$UserProfilesTableCreateCompanionBuilder = UserProfilesCompanion
   Value<int> etherCount,
   Value<int> rareCandyCount,
   Value<int> coins,
+  Value<String> exerciseFiveRms,
 });
 typedef $$UserProfilesTableUpdateCompanionBuilder = UserProfilesCompanion
     Function({
@@ -2650,6 +2695,7 @@ typedef $$UserProfilesTableUpdateCompanionBuilder = UserProfilesCompanion
   Value<int> etherCount,
   Value<int> rareCandyCount,
   Value<int> coins,
+  Value<String> exerciseFiveRms,
 });
 
 class $$UserProfilesTableFilterComposer
@@ -2724,6 +2770,10 @@ class $$UserProfilesTableFilterComposer
 
   ColumnFilters<int> get coins => $composableBuilder(
       column: $table.coins, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get exerciseFiveRms => $composableBuilder(
+      column: $table.exerciseFiveRms,
+      builder: (column) => ColumnFilters(column));
 }
 
 class $$UserProfilesTableOrderingComposer
@@ -2798,6 +2848,10 @@ class $$UserProfilesTableOrderingComposer
 
   ColumnOrderings<int> get coins => $composableBuilder(
       column: $table.coins, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get exerciseFiveRms => $composableBuilder(
+      column: $table.exerciseFiveRms,
+      builder: (column) => ColumnOrderings(column));
 }
 
 class $$UserProfilesTableAnnotationComposer
@@ -2862,6 +2916,9 @@ class $$UserProfilesTableAnnotationComposer
 
   GeneratedColumn<int> get coins =>
       $composableBuilder(column: $table.coins, builder: (column) => column);
+
+  GeneratedColumn<String> get exerciseFiveRms => $composableBuilder(
+      column: $table.exerciseFiveRms, builder: (column) => column);
 }
 
 class $$UserProfilesTableTableManager extends RootTableManager<
@@ -2908,6 +2965,7 @@ class $$UserProfilesTableTableManager extends RootTableManager<
             Value<int> etherCount = const Value.absent(),
             Value<int> rareCandyCount = const Value.absent(),
             Value<int> coins = const Value.absent(),
+            Value<String> exerciseFiveRms = const Value.absent(),
           }) =>
               UserProfilesCompanion(
             id: id,
@@ -2928,6 +2986,7 @@ class $$UserProfilesTableTableManager extends RootTableManager<
             etherCount: etherCount,
             rareCandyCount: rareCandyCount,
             coins: coins,
+            exerciseFiveRms: exerciseFiveRms,
           ),
           createCompanionCallback: ({
             Value<int> id = const Value.absent(),
@@ -2948,6 +3007,7 @@ class $$UserProfilesTableTableManager extends RootTableManager<
             Value<int> etherCount = const Value.absent(),
             Value<int> rareCandyCount = const Value.absent(),
             Value<int> coins = const Value.absent(),
+            Value<String> exerciseFiveRms = const Value.absent(),
           }) =>
               UserProfilesCompanion.insert(
             id: id,
@@ -2968,6 +3028,7 @@ class $$UserProfilesTableTableManager extends RootTableManager<
             etherCount: etherCount,
             rareCandyCount: rareCandyCount,
             coins: coins,
+            exerciseFiveRms: exerciseFiveRms,
           ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))

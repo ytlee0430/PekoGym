@@ -93,4 +93,10 @@ class UserProfiles extends Table {
   /// In-game currency balance.
   IntColumn get coins =>
       integer().withDefault(const Constant(0))();
+
+  // --- Per-Exercise 5RM Map (Story 9) ---
+
+  /// JSON-encoded map of per-exercise 5RM overrides keyed by move ID.
+  TextColumn get exerciseFiveRms =>
+      text().withDefault(const Constant('{}'))();
 }

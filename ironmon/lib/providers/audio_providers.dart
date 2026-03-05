@@ -23,12 +23,30 @@ final battleBgmControllerProvider =
 
 /// Whether BGM is globally muted.
 final isMutedProvider =
-    StateProvider<bool>((ref) => false);
+    NotifierProvider<_BoolNotifier, bool>(_BoolNotifier.new);
 
 /// BGM volume level (0.0 – 1.0).
 final bgmVolumeProvider =
-    StateProvider<double>((ref) => 0.7);
+    NotifierProvider<_BgmVolumeNotifier, double>(_BgmVolumeNotifier.new);
 
 /// SFX volume level (0.0 – 1.0).
 final sfxVolumeProvider =
-    StateProvider<double>((ref) => 1.0);
+    NotifierProvider<_SfxVolumeNotifier, double>(_SfxVolumeNotifier.new);
+
+class _BoolNotifier extends Notifier<bool> {
+  @override
+  bool build() => false;
+  void set(bool value) => state = value;
+}
+
+class _BgmVolumeNotifier extends Notifier<double> {
+  @override
+  double build() => 0.7;
+  void set(double value) => state = value;
+}
+
+class _SfxVolumeNotifier extends Notifier<double> {
+  @override
+  double build() => 1.0;
+  void set(double value) => state = value;
+}

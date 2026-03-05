@@ -17,7 +17,7 @@ class FiveRmSummaryCard extends StatelessWidget {
   /// Bench press 5RM in kg.
   final double benchPressFiveRm;
 
-  /// Deadlift 5RM in kg.
+  /// Barbell Row 5RM in kg (stored as deadliftFiveRm internally).
   final double deadliftFiveRm;
 
   /// Overhead press 5RM in kg.
@@ -62,7 +62,7 @@ class FiveRmSummaryCard extends StatelessWidget {
               children: [
                 Expanded(
                   child: _RmTile(
-                    label: 'Deadlift',
+                    label: 'Barbell Row',
                     value: deadliftFiveRm,
                   ),
                 ),

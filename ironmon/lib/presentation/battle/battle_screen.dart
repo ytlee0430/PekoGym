@@ -359,8 +359,9 @@ class _BattleScreenState
 
                   final detector = const PRDetector();
                   final fiveRm = profile != null
-                      ? detector.getFiveRmForType(
+                      ? detector.getFiveRmForExercise(
                           profile,
+                          move.id,
                           state.playerMuscleType,
                         )
                       : 80.0;

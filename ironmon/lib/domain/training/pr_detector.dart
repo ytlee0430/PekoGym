@@ -106,6 +106,18 @@ class PRDetector {
     };
   }
 
+  /// Returns the 5RM for a specific [moveId], falling back to the
+  /// muscle-type-level value if no per-exercise override exists.
+  double getFiveRmForExercise(
+    UserProfile profile,
+    String moveId,
+    MuscleType muscleType,
+  ) {
+    final override = profile.exerciseFiveRms[moveId];
+    if (override != null && override > 0) return override;
+    return getFiveRmForType(profile, muscleType);
+  }
+
   /// Checks if a set represents a new PR.
   PRResult checkForPR({
     required double weight,

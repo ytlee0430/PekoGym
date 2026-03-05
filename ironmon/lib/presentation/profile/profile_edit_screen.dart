@@ -146,7 +146,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
               ],
               _buildField('Squat', _squatController),
               _buildField('Bench Press', _benchController),
-              _buildField('Deadlift', _deadliftController),
+              _buildField('Barbell Row', _deadliftController),
               _buildField('Overhead Press', _ohpController),
               const SizedBox(height: 16),
               ElevatedButton(

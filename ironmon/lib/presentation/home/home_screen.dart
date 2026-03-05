@@ -5,6 +5,7 @@ import 'package:ironmon/domain/training/models/user_profile.dart';
 import 'package:ironmon/presentation/home/widgets/daily_mission_card.dart';
 import 'package:ironmon/presentation/home/widgets/exp_progress_bar.dart';
 import 'package:ironmon/presentation/home/widgets/five_rm_summary_card.dart';
+import 'package:ironmon/presentation/shared/audio_service.dart';
 import 'package:ironmon/providers/audio_providers.dart';
 import 'package:ironmon/providers/training_providers.dart';
 import 'package:ironmon/providers/user_profile_providers.dart';
@@ -22,24 +23,24 @@ class HomeScreen extends ConsumerStatefulWidget {
 
 class _HomeScreenState
     extends ConsumerState<HomeScreen> {
+  late final AudioService _audioService;
+
   @override
   void initState() {
     super.initState();
+    _audioService = ref.read(audioServiceProvider);
     WidgetsBinding.instance.addPostFrameCallback(
       (_) {
-        ref
-            .read(audioServiceProvider)
-            .playBgm('audio/bgm/home_theme.mp3');
+        _audioService.playBgm('audio/bgm/home_theme.mp3');
       },
     );
   }
 
   @override
   void dispose() {
-    ref.read(audioServiceProvider).stopBgm(
-          fadeOut:
-              const Duration(milliseconds: 300),
-        );
+    _audioService.stopBgm(
+      fadeOut: const Duration(milliseconds: 300),
+    );
     super.dispose();
   }
 
