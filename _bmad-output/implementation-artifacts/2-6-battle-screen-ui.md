@@ -15,7 +15,7 @@ So that the training-as-battle experience feels immersive.
    **Then** the boss sprite, boss HP bar, and player HP bar are displayed
 2. **And** damage numbers animate on hit with pixel-style text (FR33)
 3. **And** the boss HP bar uses `AnimatedBuilder` for smooth animation (NFR2: 60fps)
-4. **And** the set input panel supports weight/reps/RPE entry in <5 seconds (prefill previous set, +/- 2.5kg buttons)
+4. **And** the set input panel supports weight/reps/RPE entry in <5 seconds (prefill from same-move previous set, or from per-exercise 5RM if no history for this move; +/- 2.5kg buttons)
 5. **And** the UI uses `ConsumerWidget` + `select()` for precise Riverpod subscriptions (avoid full tree rebuild)
 6. **And** damage animation is isolated with `RepaintBoundary`
 
@@ -116,9 +116,10 @@ This story is presentation-only. No Drift changes.
 
 ### Set Input Panel UX
 
-- Prefill weight from previous set (or default 20kg for first set)
+- Weight prefill: last set of the **currently selected move**; if no history for this move, use `PRDetector.getFiveRmForExercise()` (per-exercise 5RM)
+- Reps prefill: last set of the currently selected move; if no history, use phase-appropriate suggestion (Warmup=12, MidBoss=8, GymLeader=5)
+- Switching moves triggers `didUpdateWidget` → controllers update to new move's values
 - +/- 2.5 kg buttons for quick adjustment
-- Reps prefill from previous set
 - RPE defaults to 7 (moderate)
 - Large "Attack!" button at bottom
 - After submit, clear reps and RPE but keep weight
@@ -133,12 +134,15 @@ Real pixel art sprites are post-MVP. The architecture doc mentions
 
 ```
 BattleScreen (ConsumerWidget)
-├── BossArea
-│   ├── BossSprite (placeholder)
-│   ├── BossHpBar (AnimatedBuilder)
-│   └── DamageDisplay (RepaintBoundary)
-├── PhaseIndicator (current boss stage)
+├── PhaseTransition (ValueKey(currentBossIndex) — fade-out + slide-in on boss change)
+│   └── BossArea
+│       ├── BossSprite (placeholder)
+│       ├── BossHpBar (AnimatedBuilder)
+│       └── DamageDisplay (RepaintBoundary)
+├── PhaseIndicator (current boss stage — AppBar title)
 ├── PlayerHpBar
+├── PpBar
+├── ItemPanel
 ├── MoveSelector (horizontal chips)
 └── SetInputPanel (weight/reps/RPE + Attack button)
 ```
@@ -199,6 +203,8 @@ No issues encountered.
 - Player HP bar using LinearProgressIndicator
 - Battle flow wired: initBattle on mount, ref.listen for result navigation
 - Exhaustive BattlePhase switch for phase labels
+- `PhaseTransition` widget wraps BossArea with `ValueKey(currentBossIndex)` — triggers fade-out + slide-in animation on boss change
+- SetInputPanel prefill now uses per-move last set weight, falling back to per-exercise 5RM via `PRDetector.getFiveRmForExercise()`; reps fall back to phase-appropriate suggestion (12/8/5)
 
 ### File List
 - ironmon/lib/presentation/battle/battle_screen.dart (modified)

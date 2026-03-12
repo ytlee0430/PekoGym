@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 import 'package:ironmon/domain/battle/models/gym_type.dart';
 import 'package:ironmon/domain/type_system/muscle_type.dart';
 import 'package:ironmon/providers/battle_providers.dart';
-import 'package:ironmon/providers/user_profile_providers.dart';
 
 /// Screen for selecting muscle group and gym type
 /// before starting a battle.
@@ -18,8 +17,6 @@ class GymSelectionScreen extends ConsumerWidget {
         ref.watch(selectedMuscleTypeProvider);
     final selectedGym =
         ref.watch(selectedGymTypeProvider);
-    final profileAsync =
-        ref.watch(userProfileProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -69,22 +66,7 @@ class GymSelectionScreen extends ConsumerWidget {
               child: ElevatedButton(
                 onPressed: selectedMuscle == null
                     ? null
-                    : () {
-                        final level =
-                            profileAsync.value
-                                ?.level ??
-                                1;
-                        final generator = ref.read(
-                          bossGeneratorProvider,
-                        );
-                        generator.generateLineup(
-                          playerMuscle:
-                              selectedMuscle,
-                          gymType: selectedGym,
-                          playerLevel: level,
-                        );
-                        context.push('/battle');
-                      },
+                    : () => context.push('/battle'),
                 style: ElevatedButton.styleFrom(
                   textStyle: const TextStyle(
                     fontSize: 18,

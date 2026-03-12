@@ -59,16 +59,21 @@ class AudioService {
   }
 
   /// Plays BGM from [assetPath]. Loops by default.
+  /// Silently ignores missing assets to avoid crashes.
   Future<void> playBgm(
     String assetPath, {
     bool loop = true,
   }) async {
     if (_isMuted) return;
-    await _bgmPlayer.setVolume(_bgmVolume);
-    await _bgmPlayer.setReleaseMode(
-      loop ? ReleaseMode.loop : ReleaseMode.release,
-    );
-    await _bgmPlayer.play(AssetSource(assetPath));
+    try {
+      await _bgmPlayer.setVolume(_bgmVolume);
+      await _bgmPlayer.setReleaseMode(
+        loop ? ReleaseMode.loop : ReleaseMode.release,
+      );
+      await _bgmPlayer.play(AssetSource(assetPath));
+    } catch (_) {
+      // Asset not yet available — skip silently.
+    }
   }
 
   /// Stops BGM with an optional [fadeOut] duration.
@@ -108,13 +113,18 @@ class AudioService {
   }
 
   /// Plays a one-shot SFX from [assetPath].
+  /// Silently ignores missing assets to avoid crashes.
   Future<void> playSfx(String assetPath) async {
     if (_isMuted) return;
-    final player = _sfxPool[_sfxPoolIndex];
-    _sfxPoolIndex =
-        (_sfxPoolIndex + 1) % _sfxPoolSize;
-    await player.setVolume(_sfxVolume);
-    await player.play(AssetSource(assetPath));
+    try {
+      final player = _sfxPool[_sfxPoolIndex];
+      _sfxPoolIndex =
+          (_sfxPoolIndex + 1) % _sfxPoolSize;
+      await player.setVolume(_sfxVolume);
+      await player.play(AssetSource(assetPath));
+    } catch (_) {
+      // Asset not yet available — skip silently.
+    }
   }
 
   /// Sets BGM volume and persists the value.

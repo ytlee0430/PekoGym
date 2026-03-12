@@ -167,13 +167,40 @@ double getFiveRmForExercise(
 
 `getFiveRmForType()` is unchanged — still used by `BeginnerCalibrationService`.
 
-### BattleScreen — Updated Call
+### BattleScreen — Updated Calls
 
+**Damage calculation** (in `onSubmit` callback):
 ```dart
 final fiveRm = profile != null
     ? detector.getFiveRmForExercise(profile, move.id, state.playerMuscleType)
     : 80.0;
 ```
+
+**SetInputPanel prefill** (in `build`, before rendering):
+```dart
+// Last set for currently selected move only
+final setsForMove = selectedMoveId == null
+    ? <ExerciseSet>[]
+    : state.completedSets.where((s) => s.moveId == selectedMoveId).toList();
+final prevSetForMove = setsForMove.isEmpty ? null : setsForMove.last;
+
+// Recommended weight: per-exercise 5RM if no history for this move
+final recommendedWeight = prevSetForMove?.weight ??
+    (profile != null && selectedMoveId != null
+        ? prDetector.getFiveRmForExercise(profile, selectedMoveId, state.playerMuscleType)
+        : null);
+
+// Suggested reps: phase-appropriate if no history for this move
+final suggestedReps = prevSetForMove?.reps ??
+    switch (state.phase) {
+      Warmup() => 12,
+      MidBossPhase() => 8,
+      GymLeaderPhase() => 5,
+      _ => 10,
+    };
+```
+
+This ensures each move shows its own recommended weight when selected, not a generic value.
 
 ### Label Changes: "Deadlift" → "Barbell Row"
 

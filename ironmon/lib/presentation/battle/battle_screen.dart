@@ -163,13 +163,41 @@ class _BattleScreenState
             ) ??
         <MoveDefinition>[];
 
-    final prevSet = state.completedSets.isEmpty
-        ? null
-        : state.completedSets.last;
-
     final profile = ref.watch(
       userProfileProvider,
     ).value;
+
+    // Last set for the currently selected move only
+    // (not just any move — each exercise has its own weight).
+    final selectedMoveId = state.selectedMoveId;
+    final setsForMove = selectedMoveId == null
+        ? <ExerciseSet>[]
+        : state.completedSets
+            .where((s) => s.moveId == selectedMoveId)
+            .toList();
+    final prevSetForMove =
+        setsForMove.isEmpty ? null : setsForMove.last;
+
+    // Recommended weight: use this move's per-exercise 5RM
+    // when there's no history for it yet.
+    final prDetector = const PRDetector();
+    final recommendedWeight = prevSetForMove?.weight ??
+        (profile != null && selectedMoveId != null
+            ? prDetector.getFiveRmForExercise(
+                profile,
+                selectedMoveId,
+                state.playerMuscleType,
+              )
+            : null);
+
+    // Suggested reps: phase-appropriate target when no history for this move.
+    final suggestedReps = prevSetForMove?.reps ??
+        switch (state.phase) {
+          Warmup() => 12,
+          MidBossPhase() => 8,
+          GymLeaderPhase() => 5,
+          _ => 10,
+        };
 
     final phaseLabel = switch (state.phase) {
       Idle() => '',
@@ -190,46 +218,50 @@ class _BattleScreenState
         child: Stack(
           children: [
             SafeArea(
-              child: Column(
+              child: SingleChildScrollView(
+                child: Column(
           children: [
-            // Boss area
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  // Boss sprite placeholder
-                  Container(
-                    height: 120,
-                    width: 120,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[800],
-                      borderRadius:
-                          BorderRadius.circular(
-                        16,
+            // Boss area with phase transition animation
+            PhaseTransition(
+              phaseKey: ValueKey(state.currentBossIndex),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    // Boss sprite placeholder
+                    Container(
+                      height: 120,
+                      width: 120,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[800],
+                        borderRadius:
+                            BorderRadius.circular(
+                          16,
+                        ),
                       ),
-                    ),
-                    child: Center(
-                      child: Text(
-                        boss.type.elementName,
-                        style: const TextStyle(
-                          fontSize: 48,
-                          color: Colors.white,
+                      child: Center(
+                        child: Text(
+                          boss.type.elementName,
+                          style: const TextStyle(
+                            fontSize: 48,
+                            color: Colors.white,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  // Damage display
-                  DamageDisplay(
-                    damageResult: lastDamage,
-                  ),
-                  // Boss HP bar
-                  BossHpBar(
-                    currentHp: boss.currentHp,
-                    maxHp: boss.maxHp,
-                    bossName: boss.name,
-                  ),
-                ],
+                    const SizedBox(height: 8),
+                    // Damage display
+                    DamageDisplay(
+                      damageResult: lastDamage,
+                    ),
+                    // Boss HP bar
+                    BossHpBar(
+                      currentHp: boss.currentHp,
+                      maxHp: boss.maxHp,
+                      bossName: boss.name,
+                    ),
+                  ],
+                ),
               ),
             ),
             const Divider(),
@@ -316,13 +348,13 @@ class _BattleScreenState
                   )
                   .selectMove(id),
             ),
-            const Spacer(),
+            const SizedBox(height: 8),
             // Set input panel
             Padding(
               padding: const EdgeInsets.all(8),
               child: SetInputPanel(
-                previousWeight: prevSet?.weight,
-                previousReps: prevSet?.reps,
+                previousWeight: recommendedWeight,
+                previousReps: suggestedReps,
                 onSubmit: (weight, reps, rpe) {
                   final moveId =
                       state.selectedMoveId;
@@ -384,6 +416,7 @@ class _BattleScreenState
             ),
           ],
         ),
+      ),
       ),
       // Evolution animation overlay
       if (_showEvolution &&

@@ -42,7 +42,7 @@ So that my real workout drives a strategic battle.
   - [x] 4.1 Create `lib/presentation/battle/gym_selection_screen.dart` — screen for choosing muscle group and gym type
   - [x] 4.2 Display 5 muscle type buttons with element icons/colors
   - [x] 4.3 Display 2 gym type buttons (Strength / Physique) with descriptions
-  - [x] 4.4 "Start Battle" button generates lineup and navigates to battle screen
+  - [x] 4.4 "Start Battle" button navigates to `/battle` (lineup is generated in `BattleScreen._initBattle()` on mount, not here)
   - [x] 4.5 Use `ConsumerWidget` pattern
 
 - [x] Task 5: Update routing (AC: 1)
