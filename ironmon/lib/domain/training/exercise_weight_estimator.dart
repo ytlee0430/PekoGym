@@ -5,6 +5,32 @@
 class ExerciseWeightEstimator {
   const ExerciseWeightEstimator._();
 
+  /// Estimates recommended 5RM for the 4 standard compound lifts
+  /// based on body weight and gender.
+  ///
+  /// Male ratios (of bodyweight):
+  ///   Bench Press ~0.70, Barbell Row ~0.60, Squat ~0.85, OHP ~0.45
+  /// Female ratios (of bodyweight):
+  ///   Bench Press ~0.40, Barbell Row ~0.35, Squat ~0.60, OHP ~0.25
+  static ({
+    double benchPress,
+    double barbellRow,
+    double squat,
+    double shoulderPress,
+  }) estimateFromBodyWeight({
+    required double bodyWeightKg,
+    required String gender,
+  }) {
+    final isMale = gender != 'female';
+    return (
+      benchPress: _roundToNearest2p5(bodyWeightKg * (isMale ? 0.70 : 0.40)),
+      barbellRow: _roundToNearest2p5(bodyWeightKg * (isMale ? 0.60 : 0.35)),
+      squat: _roundToNearest2p5(bodyWeightKg * (isMale ? 0.85 : 0.60)),
+      shoulderPress:
+          _roundToNearest2p5(bodyWeightKg * (isMale ? 0.45 : 0.25)),
+    );
+  }
+
   /// Estimates 5RM for all 15 exercises from the 4 standard compound inputs.
   ///
   /// The [barbellRow] parameter maps to the `deadliftFiveRm` DB field.

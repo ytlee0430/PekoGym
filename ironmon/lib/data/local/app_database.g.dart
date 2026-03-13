@@ -32,6 +32,21 @@ class $UserProfilesTable extends UserProfiles
       type: DriftSqlType.int,
       requiredDuringInsert: false,
       defaultValue: const Constant(0));
+  static const VerificationMeta _genderMeta = const VerificationMeta('gender');
+  @override
+  late final GeneratedColumn<String> gender = GeneratedColumn<String>(
+      'gender', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultValue: const Constant('male'));
+  static const VerificationMeta _bodyWeightKgMeta =
+      const VerificationMeta('bodyWeightKg');
+  @override
+  late final GeneratedColumn<double> bodyWeightKg = GeneratedColumn<double>(
+      'body_weight_kg', aliasedName, false,
+      type: DriftSqlType.double,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(70));
   static const VerificationMeta _squatFiveRmMeta =
       const VerificationMeta('squatFiveRm');
   @override
@@ -165,6 +180,8 @@ class $UserProfilesTable extends UserProfiles
         id,
         level,
         experiencePoints,
+        gender,
+        bodyWeightKg,
         squatFiveRm,
         benchPressFiveRm,
         deadliftFiveRm,
@@ -204,6 +221,16 @@ class $UserProfilesTable extends UserProfiles
           _experiencePointsMeta,
           experiencePoints.isAcceptableOrUnknown(
               data['experience_points']!, _experiencePointsMeta));
+    }
+    if (data.containsKey('gender')) {
+      context.handle(_genderMeta,
+          gender.isAcceptableOrUnknown(data['gender']!, _genderMeta));
+    }
+    if (data.containsKey('body_weight_kg')) {
+      context.handle(
+          _bodyWeightKgMeta,
+          bodyWeightKg.isAcceptableOrUnknown(
+              data['body_weight_kg']!, _bodyWeightKgMeta));
     }
     if (data.containsKey('squat_five_rm')) {
       context.handle(
@@ -312,6 +339,10 @@ class $UserProfilesTable extends UserProfiles
           .read(DriftSqlType.int, data['${effectivePrefix}level'])!,
       experiencePoints: attachedDatabase.typeMapping
           .read(DriftSqlType.int, data['${effectivePrefix}experience_points'])!,
+      gender: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}gender'])!,
+      bodyWeightKg: attachedDatabase.typeMapping
+          .read(DriftSqlType.double, data['${effectivePrefix}body_weight_kg'])!,
       squatFiveRm: attachedDatabase.typeMapping
           .read(DriftSqlType.double, data['${effectivePrefix}squat_five_rm'])!,
       benchPressFiveRm: attachedDatabase.typeMapping.read(
@@ -368,6 +399,12 @@ class UserProfileEntity extends DataClass
   /// Accumulated experience points.
   final int experiencePoints;
 
+  /// Player gender ('male' or 'female').
+  final String gender;
+
+  /// Player body weight in kilograms.
+  final double bodyWeightKg;
+
   /// Squat 5-rep max in kilograms.
   final double squatFiveRm;
 
@@ -419,6 +456,8 @@ class UserProfileEntity extends DataClass
       {required this.id,
       required this.level,
       required this.experiencePoints,
+      required this.gender,
+      required this.bodyWeightKg,
       required this.squatFiveRm,
       required this.benchPressFiveRm,
       required this.deadliftFiveRm,
@@ -441,6 +480,8 @@ class UserProfileEntity extends DataClass
     map['id'] = Variable<int>(id);
     map['level'] = Variable<int>(level);
     map['experience_points'] = Variable<int>(experiencePoints);
+    map['gender'] = Variable<String>(gender);
+    map['body_weight_kg'] = Variable<double>(bodyWeightKg);
     map['squat_five_rm'] = Variable<double>(squatFiveRm);
     map['bench_press_five_rm'] = Variable<double>(benchPressFiveRm);
     map['deadlift_five_rm'] = Variable<double>(deadliftFiveRm);
@@ -467,6 +508,8 @@ class UserProfileEntity extends DataClass
       id: Value(id),
       level: Value(level),
       experiencePoints: Value(experiencePoints),
+      gender: Value(gender),
+      bodyWeightKg: Value(bodyWeightKg),
       squatFiveRm: Value(squatFiveRm),
       benchPressFiveRm: Value(benchPressFiveRm),
       deadliftFiveRm: Value(deadliftFiveRm),
@@ -493,6 +536,8 @@ class UserProfileEntity extends DataClass
       id: serializer.fromJson<int>(json['id']),
       level: serializer.fromJson<int>(json['level']),
       experiencePoints: serializer.fromJson<int>(json['experiencePoints']),
+      gender: serializer.fromJson<String>(json['gender']),
+      bodyWeightKg: serializer.fromJson<double>(json['bodyWeightKg']),
       squatFiveRm: serializer.fromJson<double>(json['squatFiveRm']),
       benchPressFiveRm: serializer.fromJson<double>(json['benchPressFiveRm']),
       deadliftFiveRm: serializer.fromJson<double>(json['deadliftFiveRm']),
@@ -521,6 +566,8 @@ class UserProfileEntity extends DataClass
       'id': serializer.toJson<int>(id),
       'level': serializer.toJson<int>(level),
       'experiencePoints': serializer.toJson<int>(experiencePoints),
+      'gender': serializer.toJson<String>(gender),
+      'bodyWeightKg': serializer.toJson<double>(bodyWeightKg),
       'squatFiveRm': serializer.toJson<double>(squatFiveRm),
       'benchPressFiveRm': serializer.toJson<double>(benchPressFiveRm),
       'deadliftFiveRm': serializer.toJson<double>(deadliftFiveRm),
@@ -546,6 +593,8 @@ class UserProfileEntity extends DataClass
           {int? id,
           int? level,
           int? experiencePoints,
+          String? gender,
+          double? bodyWeightKg,
           double? squatFiveRm,
           double? benchPressFiveRm,
           double? deadliftFiveRm,
@@ -566,6 +615,8 @@ class UserProfileEntity extends DataClass
         id: id ?? this.id,
         level: level ?? this.level,
         experiencePoints: experiencePoints ?? this.experiencePoints,
+        gender: gender ?? this.gender,
+        bodyWeightKg: bodyWeightKg ?? this.bodyWeightKg,
         squatFiveRm: squatFiveRm ?? this.squatFiveRm,
         benchPressFiveRm: benchPressFiveRm ?? this.benchPressFiveRm,
         deadliftFiveRm: deadliftFiveRm ?? this.deadliftFiveRm,
@@ -592,6 +643,10 @@ class UserProfileEntity extends DataClass
       experiencePoints: data.experiencePoints.present
           ? data.experiencePoints.value
           : this.experiencePoints,
+      gender: data.gender.present ? data.gender.value : this.gender,
+      bodyWeightKg: data.bodyWeightKg.present
+          ? data.bodyWeightKg.value
+          : this.bodyWeightKg,
       squatFiveRm:
           data.squatFiveRm.present ? data.squatFiveRm.value : this.squatFiveRm,
       benchPressFiveRm: data.benchPressFiveRm.present
@@ -640,6 +695,8 @@ class UserProfileEntity extends DataClass
           ..write('id: $id, ')
           ..write('level: $level, ')
           ..write('experiencePoints: $experiencePoints, ')
+          ..write('gender: $gender, ')
+          ..write('bodyWeightKg: $bodyWeightKg, ')
           ..write('squatFiveRm: $squatFiveRm, ')
           ..write('benchPressFiveRm: $benchPressFiveRm, ')
           ..write('deadliftFiveRm: $deadliftFiveRm, ')
@@ -662,26 +719,29 @@ class UserProfileEntity extends DataClass
   }
 
   @override
-  int get hashCode => Object.hash(
-      id,
-      level,
-      experiencePoints,
-      squatFiveRm,
-      benchPressFiveRm,
-      deadliftFiveRm,
-      overheadPressFiveRm,
-      weeklyFrequency,
-      isBeginnerMode,
-      calibrationSessionsCompleted,
-      calibrationTargetSessions,
-      unlockedMoveIds,
-      maxPp,
-      currentPp,
-      potionCount,
-      etherCount,
-      rareCandyCount,
-      coins,
-      exerciseFiveRms);
+  int get hashCode => Object.hashAll([
+        id,
+        level,
+        experiencePoints,
+        gender,
+        bodyWeightKg,
+        squatFiveRm,
+        benchPressFiveRm,
+        deadliftFiveRm,
+        overheadPressFiveRm,
+        weeklyFrequency,
+        isBeginnerMode,
+        calibrationSessionsCompleted,
+        calibrationTargetSessions,
+        unlockedMoveIds,
+        maxPp,
+        currentPp,
+        potionCount,
+        etherCount,
+        rareCandyCount,
+        coins,
+        exerciseFiveRms
+      ]);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -689,6 +749,8 @@ class UserProfileEntity extends DataClass
           other.id == this.id &&
           other.level == this.level &&
           other.experiencePoints == this.experiencePoints &&
+          other.gender == this.gender &&
+          other.bodyWeightKg == this.bodyWeightKg &&
           other.squatFiveRm == this.squatFiveRm &&
           other.benchPressFiveRm == this.benchPressFiveRm &&
           other.deadliftFiveRm == this.deadliftFiveRm &&
@@ -712,6 +774,8 @@ class UserProfilesCompanion extends UpdateCompanion<UserProfileEntity> {
   final Value<int> id;
   final Value<int> level;
   final Value<int> experiencePoints;
+  final Value<String> gender;
+  final Value<double> bodyWeightKg;
   final Value<double> squatFiveRm;
   final Value<double> benchPressFiveRm;
   final Value<double> deadliftFiveRm;
@@ -732,6 +796,8 @@ class UserProfilesCompanion extends UpdateCompanion<UserProfileEntity> {
     this.id = const Value.absent(),
     this.level = const Value.absent(),
     this.experiencePoints = const Value.absent(),
+    this.gender = const Value.absent(),
+    this.bodyWeightKg = const Value.absent(),
     this.squatFiveRm = const Value.absent(),
     this.benchPressFiveRm = const Value.absent(),
     this.deadliftFiveRm = const Value.absent(),
@@ -753,6 +819,8 @@ class UserProfilesCompanion extends UpdateCompanion<UserProfileEntity> {
     this.id = const Value.absent(),
     this.level = const Value.absent(),
     this.experiencePoints = const Value.absent(),
+    this.gender = const Value.absent(),
+    this.bodyWeightKg = const Value.absent(),
     this.squatFiveRm = const Value.absent(),
     this.benchPressFiveRm = const Value.absent(),
     this.deadliftFiveRm = const Value.absent(),
@@ -774,6 +842,8 @@ class UserProfilesCompanion extends UpdateCompanion<UserProfileEntity> {
     Expression<int>? id,
     Expression<int>? level,
     Expression<int>? experiencePoints,
+    Expression<String>? gender,
+    Expression<double>? bodyWeightKg,
     Expression<double>? squatFiveRm,
     Expression<double>? benchPressFiveRm,
     Expression<double>? deadliftFiveRm,
@@ -795,6 +865,8 @@ class UserProfilesCompanion extends UpdateCompanion<UserProfileEntity> {
       if (id != null) 'id': id,
       if (level != null) 'level': level,
       if (experiencePoints != null) 'experience_points': experiencePoints,
+      if (gender != null) 'gender': gender,
+      if (bodyWeightKg != null) 'body_weight_kg': bodyWeightKg,
       if (squatFiveRm != null) 'squat_five_rm': squatFiveRm,
       if (benchPressFiveRm != null) 'bench_press_five_rm': benchPressFiveRm,
       if (deadliftFiveRm != null) 'deadlift_five_rm': deadliftFiveRm,
@@ -821,6 +893,8 @@ class UserProfilesCompanion extends UpdateCompanion<UserProfileEntity> {
       {Value<int>? id,
       Value<int>? level,
       Value<int>? experiencePoints,
+      Value<String>? gender,
+      Value<double>? bodyWeightKg,
       Value<double>? squatFiveRm,
       Value<double>? benchPressFiveRm,
       Value<double>? deadliftFiveRm,
@@ -841,6 +915,8 @@ class UserProfilesCompanion extends UpdateCompanion<UserProfileEntity> {
       id: id ?? this.id,
       level: level ?? this.level,
       experiencePoints: experiencePoints ?? this.experiencePoints,
+      gender: gender ?? this.gender,
+      bodyWeightKg: bodyWeightKg ?? this.bodyWeightKg,
       squatFiveRm: squatFiveRm ?? this.squatFiveRm,
       benchPressFiveRm: benchPressFiveRm ?? this.benchPressFiveRm,
       deadliftFiveRm: deadliftFiveRm ?? this.deadliftFiveRm,
@@ -873,6 +949,12 @@ class UserProfilesCompanion extends UpdateCompanion<UserProfileEntity> {
     }
     if (experiencePoints.present) {
       map['experience_points'] = Variable<int>(experiencePoints.value);
+    }
+    if (gender.present) {
+      map['gender'] = Variable<String>(gender.value);
+    }
+    if (bodyWeightKg.present) {
+      map['body_weight_kg'] = Variable<double>(bodyWeightKg.value);
     }
     if (squatFiveRm.present) {
       map['squat_five_rm'] = Variable<double>(squatFiveRm.value);
@@ -934,6 +1016,8 @@ class UserProfilesCompanion extends UpdateCompanion<UserProfileEntity> {
           ..write('id: $id, ')
           ..write('level: $level, ')
           ..write('experiencePoints: $experiencePoints, ')
+          ..write('gender: $gender, ')
+          ..write('bodyWeightKg: $bodyWeightKg, ')
           ..write('squatFiveRm: $squatFiveRm, ')
           ..write('benchPressFiveRm: $benchPressFiveRm, ')
           ..write('deadliftFiveRm: $deadliftFiveRm, ')
@@ -2658,6 +2742,8 @@ typedef $$UserProfilesTableCreateCompanionBuilder = UserProfilesCompanion
   Value<int> id,
   Value<int> level,
   Value<int> experiencePoints,
+  Value<String> gender,
+  Value<double> bodyWeightKg,
   Value<double> squatFiveRm,
   Value<double> benchPressFiveRm,
   Value<double> deadliftFiveRm,
@@ -2680,6 +2766,8 @@ typedef $$UserProfilesTableUpdateCompanionBuilder = UserProfilesCompanion
   Value<int> id,
   Value<int> level,
   Value<int> experiencePoints,
+  Value<String> gender,
+  Value<double> bodyWeightKg,
   Value<double> squatFiveRm,
   Value<double> benchPressFiveRm,
   Value<double> deadliftFiveRm,
@@ -2716,6 +2804,12 @@ class $$UserProfilesTableFilterComposer
   ColumnFilters<int> get experiencePoints => $composableBuilder(
       column: $table.experiencePoints,
       builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get gender => $composableBuilder(
+      column: $table.gender, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<double> get bodyWeightKg => $composableBuilder(
+      column: $table.bodyWeightKg, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<double> get squatFiveRm => $composableBuilder(
       column: $table.squatFiveRm, builder: (column) => ColumnFilters(column));
@@ -2795,6 +2889,13 @@ class $$UserProfilesTableOrderingComposer
       column: $table.experiencePoints,
       builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<String> get gender => $composableBuilder(
+      column: $table.gender, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<double> get bodyWeightKg => $composableBuilder(
+      column: $table.bodyWeightKg,
+      builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<double> get squatFiveRm => $composableBuilder(
       column: $table.squatFiveRm, builder: (column) => ColumnOrderings(column));
 
@@ -2871,6 +2972,12 @@ class $$UserProfilesTableAnnotationComposer
 
   GeneratedColumn<int> get experiencePoints => $composableBuilder(
       column: $table.experiencePoints, builder: (column) => column);
+
+  GeneratedColumn<String> get gender =>
+      $composableBuilder(column: $table.gender, builder: (column) => column);
+
+  GeneratedColumn<double> get bodyWeightKg => $composableBuilder(
+      column: $table.bodyWeightKg, builder: (column) => column);
 
   GeneratedColumn<double> get squatFiveRm => $composableBuilder(
       column: $table.squatFiveRm, builder: (column) => column);
@@ -2950,6 +3057,8 @@ class $$UserProfilesTableTableManager extends RootTableManager<
             Value<int> id = const Value.absent(),
             Value<int> level = const Value.absent(),
             Value<int> experiencePoints = const Value.absent(),
+            Value<String> gender = const Value.absent(),
+            Value<double> bodyWeightKg = const Value.absent(),
             Value<double> squatFiveRm = const Value.absent(),
             Value<double> benchPressFiveRm = const Value.absent(),
             Value<double> deadliftFiveRm = const Value.absent(),
@@ -2971,6 +3080,8 @@ class $$UserProfilesTableTableManager extends RootTableManager<
             id: id,
             level: level,
             experiencePoints: experiencePoints,
+            gender: gender,
+            bodyWeightKg: bodyWeightKg,
             squatFiveRm: squatFiveRm,
             benchPressFiveRm: benchPressFiveRm,
             deadliftFiveRm: deadliftFiveRm,
@@ -2992,6 +3103,8 @@ class $$UserProfilesTableTableManager extends RootTableManager<
             Value<int> id = const Value.absent(),
             Value<int> level = const Value.absent(),
             Value<int> experiencePoints = const Value.absent(),
+            Value<String> gender = const Value.absent(),
+            Value<double> bodyWeightKg = const Value.absent(),
             Value<double> squatFiveRm = const Value.absent(),
             Value<double> benchPressFiveRm = const Value.absent(),
             Value<double> deadliftFiveRm = const Value.absent(),
@@ -3013,6 +3126,8 @@ class $$UserProfilesTableTableManager extends RootTableManager<
             id: id,
             level: level,
             experiencePoints: experiencePoints,
+            gender: gender,
+            bodyWeightKg: bodyWeightKg,
             squatFiveRm: squatFiveRm,
             benchPressFiveRm: benchPressFiveRm,
             deadliftFiveRm: deadliftFiveRm,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ironmon/domain/training/exercise_weight_estimator.dart';
@@ -11,6 +12,14 @@ import 'package:ironmon/providers/user_profile_providers.dart';
 
 /// Onboarding screen with card-based flow for profile creation.
 /// Uses PageView for step-by-step navigation with game-like feel.
+///
+/// New flow:
+///   0: Welcome
+///   1: Gender + Body Weight
+///   2: Mode Select (Beginner / Experienced)
+///   Beginner path: 3=Frequency, 4=Confirm
+///   Experienced path: 3-6=Standard lifts (with recommended weights),
+///                     7=AdjustAll, 8=Frequency, 9=Confirm
 class OnboardingScreen extends ConsumerStatefulWidget {
   /// Creates [OnboardingScreen].
   const OnboardingScreen({super.key});
@@ -29,7 +38,18 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
   bool _isBeginnerMode = false;
   bool _isSaving = false;
 
-  // 4 standard compound lift inputs (experienced mode pages 2-5)
+  // Body info (page 1)
+  String _gender = 'male';
+  double _bodyWeightKg = 70.0;
+  late TextEditingController _weightTextController;
+
+  // Recommended weights (calculated from gender + body weight)
+  double _recommendedBench = 0.0;
+  double _recommendedRow = 0.0;
+  double _recommendedSquat = 0.0;
+  double _recommendedOhp = 0.0;
+
+  // 4 standard compound lift inputs (experienced mode pages 3-6)
   double _benchPress = 0.0;
   double _barbellRow = 0.0;
   double _squat = 0.0;
@@ -41,10 +61,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
   int _weeklyFrequency = 3;
 
   // Total pages depends on mode:
-  // Beginner: Welcome, Mode, Frequency, Confirm = 4
-  // Experienced: Welcome, Mode, BenchPress, BarbellRow, Squat, OHP,
-  //              AdjustAll, Frequency, Confirm = 9
-  int get _totalPages => _isBeginnerMode ? 4 : 9;
+  // Beginner: Welcome, BodyInfo, Mode, Frequency, Confirm = 5
+  // Experienced: Welcome, BodyInfo, Mode, Bench, Row, Squat, OHP,
+  //              AdjustAll, Frequency, Confirm = 10
+  int get _totalPages => _isBeginnerMode ? 5 : 10;
 
   @override
   void initState() {
@@ -60,20 +80,45 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
     ).animate(_fadeController);
 
     _fadeController.forward();
+    _weightTextController = TextEditingController(text: '70');
+    _updateRecommendations();
   }
 
   @override
   void dispose() {
     _pageController.dispose();
     _fadeController.dispose();
+    _weightTextController.dispose();
     super.dispose();
+  }
+
+  void _updateRecommendations() {
+    final rec = ExerciseWeightEstimator.estimateFromBodyWeight(
+      bodyWeightKg: _bodyWeightKg,
+      gender: _gender,
+    );
+    setState(() {
+      _recommendedBench = rec.benchPress;
+      _recommendedRow = rec.barbellRow;
+      _recommendedSquat = rec.squat;
+      _recommendedOhp = rec.shoulderPress;
+      // Pre-fill with recommended values if user hasn't entered anything
+      if (_benchPress == 0.0) _benchPress = rec.benchPress;
+      if (_barbellRow == 0.0) _barbellRow = rec.barbellRow;
+      if (_squat == 0.0) _squat = rec.squat;
+      if (_shoulderPress == 0.0) _shoulderPress = rec.shoulderPress;
+    });
   }
 
   void _nextPage() {
     if (_currentPage < _totalPages - 1) {
-      // When entering page 6 (AdjustAll, index 6) in experienced mode,
+      // When leaving body info page, update recommendations
+      if (_currentPage == 1) {
+        _updateRecommendations();
+      }
+      // When entering AdjustAll page (index 7) in experienced mode,
       // populate estimates from the 4 inputs.
-      if (!_isBeginnerMode && _currentPage == 5) {
+      if (!_isBeginnerMode && _currentPage == 6) {
         _exerciseFiveRms = ExerciseWeightEstimator.estimateAll(
           benchPress: _benchPress,
           barbellRow: _barbellRow,
@@ -101,6 +146,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
     setState(() => _isSaving = true);
 
     final profile = UserProfile(
+      gender: _gender,
+      bodyWeightKg: _bodyWeightKg,
       benchPressFiveRm: _isBeginnerMode ? 20.0 : _benchPress,
       deadliftFiveRm: _isBeginnerMode ? 20.0 : _barbellRow,
       squatFiveRm: _isBeginnerMode ? 20.0 : _squat,
@@ -112,13 +159,12 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
       level: 1,
       experiencePoints: 0,
       maxPp: 100,
-      exerciseFiveRms: _isBeginnerMode ? const {} : Map.unmodifiable(_exerciseFiveRms),
+      exerciseFiveRms:
+          _isBeginnerMode ? const {} : Map.unmodifiable(_exerciseFiveRms),
     );
 
     try {
-      await ref
-          .read(userProfileProvider.notifier)
-          .saveProfile(profile);
+      await ref.read(userProfileProvider.notifier).saveProfile(profile);
 
       if (!mounted) return;
 
@@ -153,46 +199,52 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
     if (_isBeginnerMode) {
       return switch (index) {
         0 => _buildWelcomePage(),
-        1 => _buildModeSelectPage(),
-        2 => _buildFrequencyPage(),
-        3 => _buildConfirmPage(),
+        1 => _buildBodyInfoPage(),
+        2 => _buildModeSelectPage(),
+        3 => _buildFrequencyPage(),
+        4 => _buildConfirmPage(),
         _ => throw ArgumentError('Invalid page index: $index'),
       };
     } else {
       return switch (index) {
         0 => _buildWelcomePage(),
-        1 => _buildModeSelectPage(),
-        2 => _buildStandardLiftPage(
+        1 => _buildBodyInfoPage(),
+        2 => _buildModeSelectPage(),
+        3 => _buildStandardLiftPage(
             muscleType: MuscleType.chest,
             exerciseName: 'Barbell Bench Press',
             exerciseSubtitle: 'Standard barbell compound',
             value: _benchPress,
+            recommendedValue: _recommendedBench,
             onChanged: (v) => setState(() => _benchPress = v),
           ),
-        3 => _buildStandardLiftPage(
+        4 => _buildStandardLiftPage(
             muscleType: MuscleType.back,
             exerciseName: 'Barbell Row',
             exerciseSubtitle: 'Standard back compound',
             value: _barbellRow,
+            recommendedValue: _recommendedRow,
             onChanged: (v) => setState(() => _barbellRow = v),
           ),
-        4 => _buildStandardLiftPage(
+        5 => _buildStandardLiftPage(
             muscleType: MuscleType.legs,
             exerciseName: 'Barbell Squat',
             exerciseSubtitle: 'Standard leg compound',
             value: _squat,
+            recommendedValue: _recommendedSquat,
             onChanged: (v) => setState(() => _squat = v),
           ),
-        5 => _buildStandardLiftPage(
+        6 => _buildStandardLiftPage(
             muscleType: MuscleType.shoulders,
             exerciseName: 'Overhead Press',
             exerciseSubtitle: 'Standard shoulder compound',
             value: _shoulderPress,
+            recommendedValue: _recommendedOhp,
             onChanged: (v) => setState(() => _shoulderPress = v),
           ),
-        6 => _buildExerciseAdjustmentPage(),
-        7 => _buildFrequencyPage(),
-        8 => _buildConfirmPage(),
+        7 => _buildExerciseAdjustmentPage(),
+        8 => _buildFrequencyPage(),
+        9 => _buildConfirmPage(),
         _ => throw ArgumentError('Invalid page index: $index'),
       };
     }
@@ -246,6 +298,169 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
     );
   }
 
+  // ---------------------------------------------------------------------------
+  // NEW: Body Info Page (Gender + Body Weight)
+  // ---------------------------------------------------------------------------
+
+  Widget _buildBodyInfoPage() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          PixelText.h2(
+            'About You',
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'We\'ll use this to recommend starting weights',
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: IronMonColors.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 32),
+
+          // Gender selection
+          Text(
+            'Gender',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              color: IronMonColors.onSurface,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _GenderCard(
+                  label: 'Male',
+                  icon: Icons.male,
+                  isSelected: _gender == 'male',
+                  onTap: () => setState(() {
+                    _gender = 'male';
+                    _resetLiftsForRecommendation();
+                  }),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: _GenderCard(
+                  label: 'Female',
+                  icon: Icons.female,
+                  isSelected: _gender == 'female',
+                  onTap: () => setState(() {
+                    _gender = 'female';
+                    _resetLiftsForRecommendation();
+                  }),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 32),
+
+          // Body weight input
+          Text(
+            'Body Weight',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              color: IronMonColors.onSurface,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.remove_circle_outline),
+                iconSize: 36,
+                color: IronMonColors.primary,
+                onPressed: () {
+                  final newWeight = (_bodyWeightKg - 1).clamp(30.0, 200.0);
+                  setState(() => _bodyWeightKg = newWeight);
+                  _weightTextController.text = newWeight.round().toString();
+                  _resetLiftsForRecommendation();
+                },
+              ),
+              const SizedBox(width: 8),
+              SizedBox(
+                width: 100,
+                child: TextField(
+                  controller: _weightTextController,
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 32,
+                    fontWeight: FontWeight.bold,
+                    color: IronMonColors.onSurface,
+                  ),
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                    focusedBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: IronMonColors.primary),
+                    ),
+                    contentPadding: EdgeInsets.symmetric(
+                      vertical: 12,
+                      horizontal: 8,
+                    ),
+                  ),
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(RegExp(r'[\d.]')),
+                  ],
+                  onChanged: (text) {
+                    final v = double.tryParse(text);
+                    if (v != null && v >= 30 && v <= 200) {
+                      setState(() => _bodyWeightKg = v);
+                      _resetLiftsForRecommendation();
+                    }
+                  },
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'kg',
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  color: IronMonColors.onSurfaceVariant,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(width: 8),
+              IconButton(
+                icon: const Icon(Icons.add_circle_outline),
+                iconSize: 36,
+                color: IronMonColors.primary,
+                onPressed: () {
+                  final newWeight = (_bodyWeightKg + 1).clamp(30.0, 200.0);
+                  setState(() => _bodyWeightKg = newWeight);
+                  _weightTextController.text = newWeight.round().toString();
+                  _resetLiftsForRecommendation();
+                },
+              ),
+            ],
+          ),
+          const SizedBox(height: 32),
+
+          ElevatedButton(
+            onPressed: _nextPage,
+            style: ElevatedButton.styleFrom(
+              minimumSize: const Size(200, 48),
+            ),
+            child: const Text('Continue'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _resetLiftsForRecommendation() {
+    // Reset to 0 so _updateRecommendations will re-fill them
+    _benchPress = 0.0;
+    _barbellRow = 0.0;
+    _squat = 0.0;
+    _shoulderPress = 0.0;
+  }
+
   Widget _buildModeSelectPage() {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
@@ -279,7 +494,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                     const SizedBox(height: 12),
                     Text(
                       'Beginner Mode',
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      style:
+                          Theme.of(context).textTheme.headlineSmall?.copyWith(
                         color: _isBeginnerMode
                             ? IronMonColors.onPrimaryContainer
                             : IronMonColors.onSurface,
@@ -322,7 +538,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                     const SizedBox(height: 12),
                     Text(
                       'Experienced Mode',
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      style:
+                          Theme.of(context).textTheme.headlineSmall?.copyWith(
                         color: !_isBeginnerMode
                             ? IronMonColors.onPrimaryContainer
                             : IronMonColors.onSurface,
@@ -331,7 +548,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Enter your current 5RM weights\nStart with accurate progression',
+                      'We\'ll recommend weights based on your body\nAdjust to your actual 5RM',
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: IronMonColors.onSurfaceVariant,
@@ -360,6 +577,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
     required String exerciseName,
     required String exerciseSubtitle,
     required double value,
+    required double recommendedValue,
     required ValueChanged<double> onChanged,
   }) {
     return SingleChildScrollView(
@@ -373,6 +591,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
             onChanged: onChanged,
             exerciseName: exerciseName,
             exerciseSubtitle: exerciseSubtitle,
+            recommendedValue: recommendedValue,
           ),
           const SizedBox(height: 24),
           ElevatedButton(
@@ -388,7 +607,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
   }
 
   // ---------------------------------------------------------------------------
-  // Adjustment page (page 6 in experienced mode)
+  // Adjustment page (page 7 in experienced mode)
   // ---------------------------------------------------------------------------
 
   static const _exerciseGroups = <_ExerciseGroup>[
@@ -506,7 +725,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
             if (ex.isStandard)
               const Padding(
                 padding: EdgeInsets.only(right: 8),
-                child: Icon(Icons.lock, size: 16, color: IronMonColors.onSurfaceVariant),
+                child: Icon(Icons.lock, size: 16,
+                    color: IronMonColors.onSurfaceVariant),
               ),
             Expanded(
               child: Text(
@@ -531,19 +751,28 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                     )
                   : TextFormField(
                       initialValue: value.toStringAsFixed(1),
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
                       textAlign: TextAlign.right,
                       style: const TextStyle(
                         color: IronMonColors.onSurface,
                       ),
                       decoration: const InputDecoration(
                         suffixText: 'kg',
-                        suffixStyle: TextStyle(color: IronMonColors.onSurfaceVariant),
+                        suffixStyle: TextStyle(
+                          color: IronMonColors.onSurfaceVariant,
+                        ),
                         isDense: true,
-                        contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                        contentPadding: EdgeInsets.symmetric(
+                          vertical: 8,
+                          horizontal: 4,
+                        ),
                         border: OutlineInputBorder(),
                         focusedBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: IronMonColors.primary),
+                          borderSide: BorderSide(
+                            color: IronMonColors.primary,
+                          ),
                         ),
                       ),
                       onChanged: (text) {
@@ -600,7 +829,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
                       ),
                     ),
                     trailing: _weeklyFrequency == days
-                        ? const Icon(Icons.check, color: IronMonColors.primary)
+                        ? const Icon(Icons.check,
+                            color: IronMonColors.primary)
                         : null,
                     onTap: () => setState(() => _weeklyFrequency = days),
                   ),
@@ -653,6 +883,12 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
           const SizedBox(height: 8),
           Text(
             'Mode: ${_isBeginnerMode ? 'Beginner' : 'Experienced'}',
+            style: Theme.of(context).textTheme.bodyLarge,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Gender: ${_gender == 'male' ? 'Male' : 'Female'} | '
+            'Weight: ${_bodyWeightKg.round()} kg',
             style: Theme.of(context).textTheme.bodyLarge,
           ),
           const SizedBox(height: 48),
@@ -756,6 +992,58 @@ class _ExerciseInfo {
   final String id;
   final String name;
   final bool isStandard;
+}
+
+/// Gender selection card widget.
+class _GenderCard extends StatelessWidget {
+  const _GenderCard({
+    required this.label,
+    required this.icon,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  final String label;
+  final IconData icon;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      color: isSelected
+          ? IronMonColors.primaryContainer
+          : IronMonColors.surfaceVariant,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 20),
+          child: Column(
+            children: [
+              Icon(
+                icon,
+                size: 48,
+                color: isSelected
+                    ? IronMonColors.onPrimaryContainer
+                    : IronMonColors.onSurfaceVariant,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                label,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: isSelected
+                      ? IronMonColors.onPrimaryContainer
+                      : IronMonColors.onSurface,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 /// Celebration screen shown after profile creation.

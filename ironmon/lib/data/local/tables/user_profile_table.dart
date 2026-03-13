@@ -22,6 +22,16 @@ class UserProfiles extends Table {
   IntColumn get experiencePoints =>
       integer().withDefault(const Constant(0))();
 
+  // --- Body Info ---
+
+  /// Player gender ('male' or 'female').
+  TextColumn get gender =>
+      text().withDefault(const Constant('male'))();
+
+  /// Player body weight in kilograms.
+  RealColumn get bodyWeightKg =>
+      real().withDefault(const Constant(70))();
+
   // --- 5RM Values (kg) ---
 
   /// Squat 5-rep max in kilograms.

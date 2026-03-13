@@ -8,7 +8,9 @@ import 'package:ironmon/presentation/shared/pixel_text.dart';
 ///
 /// Displays exercise name, icon, and numeric input field.
 /// Uses dark theme styling and validates input range.
-class FiveRmInputCard extends StatelessWidget {
+/// When a recommended value is provided, it shows as pre-filled
+/// and auto-selects on focus so the user can type to replace.
+class FiveRmInputCard extends StatefulWidget {
   /// Creates a [FiveRmInputCard].
   const FiveRmInputCard({
     required this.muscleType,
@@ -17,6 +19,7 @@ class FiveRmInputCard extends StatelessWidget {
     this.validator,
     this.exerciseName,
     this.exerciseSubtitle,
+    this.recommendedValue,
     super.key,
   });
 
@@ -38,8 +41,67 @@ class FiveRmInputCard extends StatelessWidget {
   /// Optional override for the subtitle (e.g. "Primary chest compound").
   final String? exerciseSubtitle;
 
+  /// Recommended value based on body weight/gender. Shown as pre-filled.
+  final double? recommendedValue;
+
+  @override
+  State<FiveRmInputCard> createState() => _FiveRmInputCardState();
+}
+
+class _FiveRmInputCardState extends State<FiveRmInputCard> {
+  late TextEditingController _controller;
+  late FocusNode _focusNode;
+  bool _hasUserEdited = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(
+      text: _displayValue,
+    );
+    _focusNode = FocusNode();
+    _focusNode.addListener(_onFocusChange);
+  }
+
+  String get _displayValue {
+    final v = widget.value;
+    if (v == 0.0 && !_hasUserEdited) return '';
+    return v == v.roundToDouble()
+        ? v.round().toString()
+        : v.toStringAsFixed(1);
+  }
+
+  void _onFocusChange() {
+    if (_focusNode.hasFocus) {
+      // Select all text on focus so user can type to replace
+      _controller.selection = TextSelection(
+        baseOffset: 0,
+        extentOffset: _controller.text.length,
+      );
+    }
+  }
+
+  @override
+  void didUpdateWidget(FiveRmInputCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // If value changed externally (e.g. from recommended), update controller
+    if (widget.value != oldWidget.value && !_focusNode.hasFocus) {
+      _controller.text = _displayValue;
+    }
+  }
+
+  @override
+  void dispose() {
+    _focusNode.removeListener(_onFocusChange);
+    _focusNode.dispose();
+    _controller.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
+    final recommended = widget.recommendedValue;
+
     return Card(
       color: IronMonColors.surfaceVariant,
       child: Padding(
@@ -49,12 +111,12 @@ class FiveRmInputCard extends StatelessWidget {
           children: [
             // Exercise name and type
             PixelText.h2(
-              exerciseName ?? muscleType.displayName,
-              color: IronMonColors.colorForType(muscleType),
+              widget.exerciseName ?? widget.muscleType.displayName,
+              color: IronMonColors.colorForType(widget.muscleType),
             ),
             const SizedBox(height: 8),
             Text(
-              exerciseSubtitle ?? muscleType.elementName,
+              widget.exerciseSubtitle ?? widget.muscleType.elementName,
               style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                 color: IronMonColors.onSurfaceVariant,
               ),
@@ -67,25 +129,44 @@ class FiveRmInputCard extends StatelessWidget {
                 width: 80,
                 height: 80,
                 decoration: BoxDecoration(
-                  color: IronMonColors.colorForType(muscleType).withValues(alpha: 0.2),
+                  color: IronMonColors.colorForType(widget.muscleType)
+                      .withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Icon(
-                  _getExerciseIcon(muscleType),
+                  _getExerciseIcon(widget.muscleType),
                   size: 48,
-                  color: IronMonColors.colorForType(muscleType),
+                  color: IronMonColors.colorForType(widget.muscleType),
                 ),
               ),
             ),
             const SizedBox(height: 24),
+
+            // Recommended value hint
+            if (recommended != null && recommended > 0)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Center(
+                  child: Text(
+                    'Recommended: ${recommended == recommended.roundToDouble() ? recommended.round() : recommended.toStringAsFixed(1)} kg',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: IronMonColors.primary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
             
             // Input field
             Row(
               children: [
                 Expanded(
-                  child: TextFormField(
-                    initialValue: value.toString(),
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  child: TextField(
+                    controller: _controller,
+                    focusNode: _focusNode,
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
                     style: const TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
@@ -93,17 +174,25 @@ class FiveRmInputCard extends StatelessWidget {
                     ),
                     textAlign: TextAlign.center,
                     decoration: InputDecoration(
-                      hintText: '0',
+                      hintText: recommended != null && recommended > 0
+                          ? '${recommended == recommended.roundToDouble() ? recommended.round() : recommended.toStringAsFixed(1)}'
+                          : '0',
                       hintStyle: TextStyle(
-                        color: IronMonColors.onSurface.withValues(alpha: 0.5),
+                        color: IronMonColors.onSurface.withValues(alpha: 0.3),
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
                       ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
-                        borderSide: const BorderSide(color: IronMonColors.outline),
+                        borderSide: const BorderSide(
+                          color: IronMonColors.outline,
+                        ),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
-                        borderSide: const BorderSide(color: IronMonColors.primary),
+                        borderSide: const BorderSide(
+                          color: IronMonColors.primary,
+                        ),
                       ),
                       contentPadding: const EdgeInsets.symmetric(
                         vertical: 16,
@@ -111,23 +200,16 @@ class FiveRmInputCard extends StatelessWidget {
                       ),
                     ),
                     inputFormatters: [
-                      _FiveRmInputFormatter(),
+                      FilteringTextInputFormatter.allow(RegExp(r'[\d.]')),
                     ],
-                    validator: (text) {
-                      final value = double.tryParse(text ?? '');
-                      if (value == null) return '請輸入數字';
-                      if (value < 0) return '不能小於 0';
-                      if (value > 500) return '不能大於 500';
-                      return validator?.call(value);
-                    },
-                    onSaved: (text) {
-                      final value = double.tryParse(text ?? '0') ?? 0;
-                      onChanged(value);
-                    },
                     onChanged: (text) {
-                      final value = double.tryParse(text ?? '');
-                      if (value != null) {
-                        onChanged(value);
+                      _hasUserEdited = true;
+                      final value = double.tryParse(text);
+                      if (value != null && value >= 0 && value <= 500) {
+                        widget.onChanged(value);
+                      } else if (text.isEmpty) {
+                        // If field is empty, use recommended or 0
+                        widget.onChanged(recommended ?? 0.0);
                       }
                     },
                   ),
@@ -146,7 +228,7 @@ class FiveRmInputCard extends StatelessWidget {
             
             // Helper text
             Text(
-              '請輸入您的 5RM 重量（最大重複 5 次的重量）',
+              'Enter your 5RM weight (max weight for 5 reps)',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: IronMonColors.onSurfaceVariant,
               ),
@@ -165,43 +247,5 @@ class FiveRmInputCard extends StatelessWidget {
       MuscleType.shoulders => Icons.sports_gymnastics,
       MuscleType.arms => Icons.sports_martial_arts,
     };
-  }
-}
-
-/// Input formatter for 5RM values.
-///
-/// Ensures proper decimal format and range.
-class _FiveRmInputFormatter extends TextInputFormatter {
-  @override
-  TextEditingValue formatEditUpdate(
-    TextEditingValue oldValue,
-    TextEditingValue newValue,
-  ) {
-    // Allow empty value
-    if (newValue.text.isEmpty) {
-      return newValue;
-    }
-
-    // Parse the value
-    final value = double.tryParse(newValue.text);
-    if (value == null) {
-      return oldValue;
-    }
-
-    // Check range
-    if (value < 0 || value > 500) {
-      return oldValue;
-    }
-
-    // Ensure proper decimal format (max 1 decimal place)
-    final text = value.toStringAsFixed(1);
-    if (text.endsWith('.0')) {
-      return TextEditingValue(
-        text: text.substring(0, text.length - 2),
-        selection: TextSelection.collapsed(offset: text.length - 2),
-      );
-    }
-
-    return newValue;
   }
 }

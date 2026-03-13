@@ -10,6 +10,8 @@ class UserProfile {
     this.id = 0,
     this.level = 1,
     this.experiencePoints = 0,
+    this.gender = 'male',
+    this.bodyWeightKg = 70.0,
     this.squatFiveRm = 0.0,
     this.benchPressFiveRm = 0.0,
     this.deadliftFiveRm = 0.0,
@@ -36,6 +38,12 @@ class UserProfile {
 
   /// Accumulated experience points.
   final int experiencePoints;
+
+  /// Player gender ('male' or 'female').
+  final String gender;
+
+  /// Player body weight in kilograms.
+  final double bodyWeightKg;
 
   /// Squat 5-rep max in kilograms.
   final double squatFiveRm;
@@ -92,6 +100,8 @@ class UserProfile {
     int? id,
     int? level,
     int? experiencePoints,
+    String? gender,
+    double? bodyWeightKg,
     double? squatFiveRm,
     double? benchPressFiveRm,
     double? deadliftFiveRm,
@@ -113,6 +123,8 @@ class UserProfile {
       id: id ?? this.id,
       level: level ?? this.level,
       experiencePoints: experiencePoints ?? this.experiencePoints,
+      gender: gender ?? this.gender,
+      bodyWeightKg: bodyWeightKg ?? this.bodyWeightKg,
       squatFiveRm: squatFiveRm ?? this.squatFiveRm,
       benchPressFiveRm: benchPressFiveRm ?? this.benchPressFiveRm,
       deadliftFiveRm: deadliftFiveRm ?? this.deadliftFiveRm,
@@ -144,6 +156,8 @@ class UserProfile {
         other.id == id &&
         other.level == level &&
         other.experiencePoints == experiencePoints &&
+        other.gender == gender &&
+        other.bodyWeightKg == bodyWeightKg &&
         other.squatFiveRm == squatFiveRm &&
         other.benchPressFiveRm == benchPressFiveRm &&
         other.deadliftFiveRm == deadliftFiveRm &&
@@ -167,31 +181,38 @@ class UserProfile {
 
   @override
   int get hashCode => Object.hash(
-        id,
-        level,
-        experiencePoints,
-        squatFiveRm,
-        benchPressFiveRm,
-        deadliftFiveRm,
-        overheadPressFiveRm,
-        weeklyFrequency,
-        isBeginnerMode,
-        calibrationSessionsCompleted,
-        calibrationTargetSessions,
-        const ListEquality<String>().hash(unlockedMoveIds),
-        maxPp,
-        currentPp,
-        potionCount,
-        etherCount,
-        rareCandyCount,
-        coins,
-        const MapEquality<String, double>().hash(exerciseFiveRms),
+        Object.hash(
+          id,
+          level,
+          experiencePoints,
+          gender,
+          bodyWeightKg,
+          squatFiveRm,
+          benchPressFiveRm,
+          deadliftFiveRm,
+          overheadPressFiveRm,
+          weeklyFrequency,
+        ),
+        Object.hash(
+          isBeginnerMode,
+          calibrationSessionsCompleted,
+          calibrationTargetSessions,
+          const ListEquality<String>().hash(unlockedMoveIds),
+          maxPp,
+          currentPp,
+          potionCount,
+          etherCount,
+          rareCandyCount,
+          coins,
+          const MapEquality<String, double>().hash(exerciseFiveRms),
+        ),
       );
 
   @override
   String toString() {
     return 'UserProfile(id: $id, level: $level, '
         'xp: $experiencePoints, '
+        'gender: $gender, bodyWeight: $bodyWeightKg, '
         'squat: $squatFiveRm, bench: $benchPressFiveRm, '
         'deadlift: $deadliftFiveRm, '
         'ohp: $overheadPressFiveRm, '
