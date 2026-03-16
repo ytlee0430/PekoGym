@@ -14,7 +14,11 @@ import 'package:ironmon/presentation/battle/widgets/damage_display.dart';
 import 'package:ironmon/presentation/battle/widgets/evolution_animation.dart';
 import 'package:ironmon/presentation/battle/widgets/set_input_panel.dart';
 import 'package:ironmon/presentation/battle/widgets/screen_shake.dart';
+import 'package:ironmon/presentation/battle/widgets/boss_sprite.dart';
+import 'package:ironmon/presentation/battle/widgets/sprites.dart';
+import 'package:ironmon/presentation/battle/widgets/attack_effect.dart';
 import 'package:ironmon/domain/training/pr_detector.dart';
+import 'package:ironmon/domain/type_system/muscle_type.dart';
 import 'package:ironmon/providers/battle_providers.dart';
 import 'package:ironmon/providers/repository_providers.dart';
 import 'package:ironmon/providers/user_profile_providers.dart';
@@ -56,6 +60,11 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
   bool _showIntro = true;
   late AnimationController _introController;
   int _introTextIndex = 0; // for typewriter text
+
+  // Attack effect state
+  bool _showAttackEffect = false;
+  MuscleType _attackMoveType = MuscleType.chest;
+  bool _bossHitFlash = false;
 
   // -- Lifecycle --------------------------------------------------------------
 
@@ -262,6 +271,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
                       maxPlayerPp: state.maxPlayerPp,
                       completedSets: state.completedSets.length,
                       lastDamage: lastDamage,
+                      bossHitFlash: _bossHitFlash,
                     ),
                   ),
 
@@ -332,6 +342,17 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
                   ),
                 ),
               ),
+
+            // Attack type effect overlay
+            if (_showAttackEffect)
+              Positioned.fill(
+                child: AttackEffect(
+                  moveType: _attackMoveType,
+                  onComplete: () {
+                    if (mounted) setState(() => _showAttackEffect = false);
+                  },
+                ),
+              ),
           ],
         ),
       ),
@@ -396,84 +417,21 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
                           ),
                         ),
 
-                        // Enemy trainer (left side, facing right)
+                        // Enemy trainer (left side)
                         Positioned(
                           left: 24,
                           bottom: 70,
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              // Trainer sprite
-                              Container(
-                                width: 80,
-                                height: 100,
-                                decoration: BoxDecoration(
-                                  color: typeColor.withValues(alpha: 0.2),
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(
-                                    color: typeColor.withValues(alpha: 0.4),
-                                    width: 2,
-                                  ),
-                                ),
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(
-                                      Icons.sports_martial_arts,
-                                      size: 48,
-                                      color: typeColor,
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      gym.displayName,
-                                      style: TextStyle(
-                                        fontFamily: 'PressStart2P',
-                                        fontSize: 6,
-                                        color: typeColor,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
+                          child: TrainerSprite(
+                            typeColor: typeColor,
+                            size: 100,
                           ),
                         ),
 
-                        // Player trainer (right side, facing left)
+                        // Player trainer (right side)
                         Positioned(
                           right: 24,
                           bottom: 70,
-                          child: Container(
-                            width: 80,
-                            height: 100,
-                            decoration: BoxDecoration(
-                              color: IronMonColors.primary.withValues(alpha: 0.2),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: IronMonColors.primary.withValues(alpha: 0.4),
-                                width: 2,
-                              ),
-                            ),
-                            child: const Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.person,
-                                  size: 48,
-                                  color: IronMonColors.primary,
-                                ),
-                                SizedBox(height: 4),
-                                Text(
-                                  'YOU',
-                                  style: TextStyle(
-                                    fontFamily: 'PressStart2P',
-                                    fontSize: 6,
-                                    color: IronMonColors.primary,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
+                          child: PlayerSprite(size: 100),
                         ),
 
                         // Pokeball indicators (enemy team count) - right of enemy trainer
@@ -1142,7 +1100,18 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
                 ref
                     .read(battleStateNotifierProvider.notifier)
                     .submitSet(exerciseSet, move, fiveRm);
-                setState(() => _setNumber++);
+
+                // Trigger attack effect + boss hit flash
+                setState(() {
+                  _setNumber++;
+                  _showAttackEffect = true;
+                  _attackMoveType = move.type;
+                  _bossHitFlash = true;
+                });
+                // Clear hit flash after brief delay
+                Future.delayed(const Duration(milliseconds: 300), () {
+                  if (mounted) setState(() => _bossHitFlash = false);
+                });
               },
             ),
           ),
@@ -1168,6 +1137,7 @@ class _BattleScene extends StatelessWidget {
     required this.maxPlayerPp,
     required this.completedSets,
     required this.lastDamage,
+    this.bossHitFlash = false,
   });
 
   final Boss boss;
@@ -1179,6 +1149,7 @@ class _BattleScene extends StatelessWidget {
   final int maxPlayerPp;
   final int completedSets;
   final DamageResult? lastDamage;
+  final bool bossHitFlash;
 
   int get _bossLevel => (boss.maxHp ~/ 20).clamp(1, 100);
 
@@ -1241,42 +1212,14 @@ class _BattleScene extends StatelessWidget {
             ),
           ),
 
-          // -- Enemy sprite (top-right, circle with type color) ---------------
+          // -- Enemy sprite (top-right, CustomPaint creature) ---------------
           Positioned(
             top: 16,
             right: 20,
-            child: Container(
-              height: 90,
-              width: 90,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: typeColor.withValues(alpha: 0.15),
-                border: Border.all(color: typeColor, width: 3),
-                boxShadow: [
-                  BoxShadow(
-                    color: typeColor.withValues(alpha: 0.35),
-                    blurRadius: 18,
-                    spreadRadius: 4,
-                  ),
-                ],
-              ),
-              child: Center(
-                child: Text(
-                  boss.type.elementName,
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontFamily: 'PressStart2P',
-                    fontWeight: FontWeight.bold,
-                    color: typeColor,
-                    shadows: [
-                      Shadow(
-                        blurRadius: 6,
-                        color: typeColor.withValues(alpha: 0.6),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+            child: AnimatedOpacity(
+              duration: const Duration(milliseconds: 100),
+              opacity: bossHitFlash ? 0.3 : 1.0,
+              child: BossSprite(boss: boss, size: 90),
             ),
           ),
 
@@ -1340,47 +1283,11 @@ class _BattleScene extends StatelessWidget {
             ),
           ),
 
-          // -- Player sprite (bottom-left, back view) -------------------------
+          // -- Player sprite (bottom-left, back view CustomPaint) -------------
           Positioned(
             bottom: 72,
             left: 24,
-            child: Container(
-              height: 76,
-              width: 68,
-              decoration: BoxDecoration(
-                color: IronMonColors.primaryContainer,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: IronMonColors.primary.withValues(alpha: 0.3),
-                  width: 2,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: IronMonColors.primary.withValues(alpha: 0.15),
-                    blurRadius: 12,
-                    spreadRadius: 2,
-                  ),
-                ],
-              ),
-              child: const Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.person, size: 42, color: IronMonColors.primary),
-                  // Back-view bar indicator
-                  SizedBox(
-                    width: 24,
-                    height: 3,
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        color: IronMonColors.primary,
-                        borderRadius:
-                            BorderRadius.all(Radius.circular(2)),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            child: PlayerSprite(size: 72),
           ),
 
           // -- Player name plate (bottom-right) -------------------------------
