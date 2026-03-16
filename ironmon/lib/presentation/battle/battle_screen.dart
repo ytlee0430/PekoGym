@@ -46,7 +46,7 @@ class BattleScreen extends ConsumerStatefulWidget {
 }
 
 class _BattleScreenState extends ConsumerState<BattleScreen>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   int _setNumber = 1;
   int _lastPrCount = 0;
   bool _showEvolution = false;
@@ -59,12 +59,17 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
   // Trainer intro state
   bool _showIntro = true;
   late AnimationController _introController;
+  late AnimationController _introSlideController;
   int _introTextIndex = 0; // for typewriter text
 
   // Attack effect state
   bool _showAttackEffect = false;
   MuscleType _attackMoveType = MuscleType.chest;
   bool _bossHitFlash = false;
+
+  // Boss faint state
+  bool _bossFainting = false;
+  late AnimationController _faintController;
 
   // -- Lifecycle --------------------------------------------------------------
 
@@ -75,9 +80,19 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
       vsync: this,
       duration: const Duration(milliseconds: 600),
     );
+    _introSlideController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    );
+    _faintController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _initBattle();
       _startIntroTypewriter();
+      // Start slide-in animations for trainers
+      _introSlideController.forward();
     });
     // Keep screen awake during battle
     WakelockPlus.enable();
@@ -103,6 +118,8 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
   @override
   void dispose() {
     _introController.dispose();
+    _introSlideController.dispose();
+    _faintController.dispose();
     WakelockPlus.disable();
     super.dispose();
   }
@@ -163,14 +180,21 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
         if (prev != null &&
             prev.currentBossIndex != next.currentBossIndex) {
           final defeated = prev.bosses[prev.currentBossIndex];
-          setState(() {
-            _actionMode = _ActionMode.action;
-            _showBossDefeated = true;
-            _defeatedBossName = defeated.name;
-          });
-          // Auto-dismiss after 1.5s
-          Future.delayed(const Duration(milliseconds: 1500), () {
-            if (mounted) setState(() => _showBossDefeated = false);
+          // Trigger faint animation first
+          setState(() => _bossFainting = true);
+          _faintController.forward().then((_) {
+            if (!mounted) return;
+            _faintController.reset();
+            setState(() {
+              _bossFainting = false;
+              _actionMode = _ActionMode.action;
+              _showBossDefeated = true;
+              _defeatedBossName = defeated.name;
+            });
+            // Auto-dismiss defeated overlay after 1.5s
+            Future.delayed(const Duration(milliseconds: 1500), () {
+              if (mounted) setState(() => _showBossDefeated = false);
+            });
           });
         }
       },
@@ -272,6 +296,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
                       completedSets: state.completedSets.length,
                       lastDamage: lastDamage,
                       bossHitFlash: _bossHitFlash,
+                      faintAnimation: _bossFainting ? _faintController : null,
                     ),
                   ),
 
@@ -417,21 +442,39 @@ class _BattleScreenState extends ConsumerState<BattleScreen>
                           ),
                         ),
 
-                        // Enemy trainer (left side)
+                        // Enemy trainer (left side) - slides in from left
                         Positioned(
                           left: 24,
                           bottom: 70,
-                          child: TrainerSprite(
-                            typeColor: typeColor,
-                            size: 100,
+                          child: SlideTransition(
+                            position: Tween<Offset>(
+                              begin: const Offset(-2, 0),
+                              end: Offset.zero,
+                            ).animate(CurvedAnimation(
+                              parent: _introSlideController,
+                              curve: Curves.easeOutBack,
+                            )),
+                            child: TrainerSprite(
+                              typeColor: typeColor,
+                              size: 100,
+                            ),
                           ),
                         ),
 
-                        // Player trainer (right side)
+                        // Player trainer (right side) - slides in from right
                         Positioned(
                           right: 24,
                           bottom: 70,
-                          child: PlayerSprite(size: 100),
+                          child: SlideTransition(
+                            position: Tween<Offset>(
+                              begin: const Offset(2, 0),
+                              end: Offset.zero,
+                            ).animate(CurvedAnimation(
+                              parent: _introSlideController,
+                              curve: Curves.easeOutBack,
+                            )),
+                            child: PlayerSprite(size: 100),
+                          ),
                         ),
 
                         // Pokeball indicators (enemy team count) - right of enemy trainer
@@ -1138,6 +1181,7 @@ class _BattleScene extends StatelessWidget {
     required this.completedSets,
     required this.lastDamage,
     this.bossHitFlash = false,
+    this.faintAnimation,
   });
 
   final Boss boss;
@@ -1150,8 +1194,40 @@ class _BattleScene extends StatelessWidget {
   final int completedSets;
   final DamageResult? lastDamage;
   final bool bossHitFlash;
+  final Animation<double>? faintAnimation;
 
   int get _bossLevel => (boss.maxHp ~/ 20).clamp(1, 100);
+
+  Widget _buildBossSprite() {
+    Widget sprite = AnimatedOpacity(
+      duration: const Duration(milliseconds: 100),
+      opacity: bossHitFlash ? 0.3 : 1.0,
+      child: BossSprite(boss: boss, size: 90),
+    );
+
+    // Faint animation: scale down vertically + slide down
+    if (faintAnimation != null) {
+      sprite = AnimatedBuilder(
+        animation: faintAnimation!,
+        builder: (context, child) {
+          final t = faintAnimation!.value; // 0 → 1
+          return Transform(
+            alignment: Alignment.bottomCenter,
+            transform: Matrix4.identity()
+              ..scale(1.0, 1.0 - t) // shrink vertically
+              ..translate(0.0, t * 40), // slide down
+            child: Opacity(
+              opacity: (1.0 - t).clamp(0.0, 1.0),
+              child: child,
+            ),
+          );
+        },
+        child: sprite,
+      );
+    }
+
+    return sprite;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -1216,11 +1292,7 @@ class _BattleScene extends StatelessWidget {
           Positioned(
             top: 16,
             right: 20,
-            child: AnimatedOpacity(
-              duration: const Duration(milliseconds: 100),
-              opacity: bossHitFlash ? 0.3 : 1.0,
-              child: BossSprite(boss: boss, size: 90),
-            ),
+            child: _buildBossSprite(),
           ),
 
           // -- Damage display (over enemy) ------------------------------------
