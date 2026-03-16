@@ -45,6 +45,8 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
   int _setNumber = 1;
   int _lastPrCount = 0;
   bool _showEvolution = false;
+  bool _showBossDefeated = false;
+  String _defeatedBossName = '';
   _ActionMode _actionMode = _ActionMode.action;
   final GlobalKey<ScreenShakeState> _screenShakeKey =
       GlobalKey<ScreenShakeState>();
@@ -122,7 +124,16 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
         // Reset to main action menu when a new boss appears
         if (prev != null &&
             prev.currentBossIndex != next.currentBossIndex) {
-          setState(() => _actionMode = _ActionMode.action);
+          final defeated = prev.bosses[prev.currentBossIndex];
+          setState(() {
+            _actionMode = _ActionMode.action;
+            _showBossDefeated = true;
+            _defeatedBossName = defeated.name;
+          });
+          // Auto-dismiss after 1.5s
+          Future.delayed(const Duration(milliseconds: 1500), () {
+            if (mounted) setState(() => _showBossDefeated = false);
+          });
         }
       },
     );
@@ -243,6 +254,47 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
                   child: EvolutionAnimation(
                     prResult: state.prEvents.last,
                     onComplete: () => setState(() => _showEvolution = false),
+                  ),
+                ),
+              ),
+
+            // Boss defeated overlay
+            if (_showBossDefeated)
+              Positioned.fill(
+                child: ColoredBox(
+                  color: Colors.black.withValues(alpha: 0.6),
+                  child: Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Text(
+                          'DEFEATED!',
+                          style: TextStyle(
+                            fontFamily: 'PressStart2P',
+                            fontSize: 24,
+                            color: IronMonColors.secondary,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          _defeatedBossName,
+                          style: const TextStyle(
+                            fontFamily: 'PressStart2P',
+                            fontSize: 12,
+                            color: IronMonColors.onSurface,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Next: $phaseLabel',
+                          style: const TextStyle(
+                            fontFamily: 'PressStart2P',
+                            fontSize: 10,
+                            color: IronMonColors.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),

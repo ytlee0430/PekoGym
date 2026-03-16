@@ -213,7 +213,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
         3 => _buildStandardLiftPage(
             muscleType: MuscleType.chest,
             exerciseName: 'Barbell Bench Press',
-            exerciseSubtitle: 'Standard barbell compound',
+            exerciseSubtitle: 'Lie flat, press barbell up from chest',
+            exerciseIcon: Icons.airline_seat_flat,
             value: _benchPress,
             recommendedValue: _recommendedBench,
             onChanged: (v) => setState(() => _benchPress = v),
@@ -221,7 +222,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
         4 => _buildStandardLiftPage(
             muscleType: MuscleType.back,
             exerciseName: 'Barbell Row',
-            exerciseSubtitle: 'Standard back compound',
+            exerciseSubtitle: 'Bend over, pull barbell to torso',
+            exerciseIcon: Icons.fitness_center,
             value: _barbellRow,
             recommendedValue: _recommendedRow,
             onChanged: (v) => setState(() => _barbellRow = v),
@@ -229,7 +231,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
         5 => _buildStandardLiftPage(
             muscleType: MuscleType.legs,
             exerciseName: 'Barbell Squat',
-            exerciseSubtitle: 'Standard leg compound',
+            exerciseSubtitle: 'Bar on back, squat down and stand up',
+            exerciseIcon: Icons.accessibility_new,
             value: _squat,
             recommendedValue: _recommendedSquat,
             onChanged: (v) => setState(() => _squat = v),
@@ -237,7 +240,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
         6 => _buildStandardLiftPage(
             muscleType: MuscleType.shoulders,
             exerciseName: 'Overhead Press',
-            exerciseSubtitle: 'Standard shoulder compound',
+            exerciseSubtitle: 'Press barbell overhead from shoulders',
+            exerciseIcon: Icons.arrow_upward,
             value: _shoulderPress,
             recommendedValue: _recommendedOhp,
             onChanged: (v) => setState(() => _shoulderPress = v),
@@ -579,6 +583,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
     required double value,
     required double recommendedValue,
     required ValueChanged<double> onChanged,
+    IconData? exerciseIcon,
   }) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
@@ -592,6 +597,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
             exerciseName: exerciseName,
             exerciseSubtitle: exerciseSubtitle,
             recommendedValue: recommendedValue,
+            exerciseIcon: exerciseIcon,
           ),
           const SizedBox(height: 24),
           ElevatedButton(

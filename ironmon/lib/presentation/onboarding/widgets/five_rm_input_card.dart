@@ -20,6 +20,7 @@ class FiveRmInputCard extends StatefulWidget {
     this.exerciseName,
     this.exerciseSubtitle,
     this.recommendedValue,
+    this.exerciseIcon,
     super.key,
   });
 
@@ -43,6 +44,9 @@ class FiveRmInputCard extends StatefulWidget {
 
   /// Recommended value based on body weight/gender. Shown as pre-filled.
   final double? recommendedValue;
+
+  /// Optional exercise-specific icon override.
+  final IconData? exerciseIcon;
 
   @override
   State<FiveRmInputCard> createState() => _FiveRmInputCardState();
@@ -134,7 +138,7 @@ class _FiveRmInputCardState extends State<FiveRmInputCard> {
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Icon(
-                  _getExerciseIcon(widget.muscleType),
+                  widget.exerciseIcon ?? _getExerciseIcon(widget.muscleType),
                   size: 48,
                   color: IronMonColors.colorForType(widget.muscleType),
                 ),
