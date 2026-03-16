@@ -41,7 +41,8 @@ class BattleScreen extends ConsumerStatefulWidget {
   ConsumerState<BattleScreen> createState() => _BattleScreenState();
 }
 
-class _BattleScreenState extends ConsumerState<BattleScreen> {
+class _BattleScreenState extends ConsumerState<BattleScreen>
+    with SingleTickerProviderStateMixin {
   int _setNumber = 1;
   int _lastPrCount = 0;
   bool _showEvolution = false;
@@ -51,20 +52,48 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
   final GlobalKey<ScreenShakeState> _screenShakeKey =
       GlobalKey<ScreenShakeState>();
 
+  // Trainer intro state
+  bool _showIntro = true;
+  late AnimationController _introController;
+  int _introTextIndex = 0; // for typewriter text
+
   // -- Lifecycle --------------------------------------------------------------
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback(
-      (_) => _initBattle(),
+    _introController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
     );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initBattle();
+      _startIntroTypewriter();
+    });
     // Keep screen awake during battle
     WakelockPlus.enable();
   }
 
+  void _startIntroTypewriter() {
+    // Animate text character by character
+    Future.doWhile(() async {
+      await Future.delayed(const Duration(milliseconds: 40));
+      if (!mounted || !_showIntro) return false;
+      setState(() => _introTextIndex++);
+      return _introTextIndex < 100; // safety cap
+    });
+  }
+
+  void _dismissIntro() {
+    if (!_showIntro) return;
+    _introController.forward().then((_) {
+      if (mounted) setState(() => _showIntro = false);
+    });
+  }
+
   @override
   void dispose() {
+    _introController.dispose();
     WakelockPlus.disable();
     super.dispose();
   }
@@ -152,6 +181,11 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
       return const Scaffold(
         body: Center(child: CircularProgressIndicator()),
       );
+    }
+
+    // Show trainer intro before battle
+    if (_showIntro) {
+      return _buildTrainerIntro(state);
     }
 
     final boss = state.currentBoss;
@@ -299,6 +333,320 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
                 ),
               ),
           ],
+        ),
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Trainer Intro Screen (Pokemon Crystal style)
+  // ---------------------------------------------------------------------------
+
+  Widget _buildTrainerIntro(BattleState state) {
+    final gym = state.gymType;
+    final muscle = state.playerMuscleType;
+    final bossCount = state.bosses.length;
+    final typeColor = IronMonColors.colorForType(muscle);
+
+    // Trainer title
+    final trainerTitle = '${gym.displayName} Gym Leader';
+    final introText = '$trainerTitle wants to battle!';
+    final visibleText = introText.substring(
+      0,
+      _introTextIndex.clamp(0, introText.length),
+    );
+
+    return Scaffold(
+      backgroundColor: IronMonColors.surface,
+      body: GestureDetector(
+        onTap: _dismissIntro,
+        behavior: HitTestBehavior.opaque,
+        child: FadeTransition(
+          opacity: Tween<double>(begin: 1, end: 0).animate(
+            CurvedAnimation(parent: _introController, curve: Curves.easeIn),
+          ),
+          child: SafeArea(
+            child: Column(
+              children: [
+                // === Battle Scene: Two trainers facing each other ===
+                Expanded(
+                  flex: 60,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          const Color(0xFF1A2332),
+                          typeColor.withValues(alpha: 0.15),
+                          IronMonColors.surface,
+                        ],
+                      ),
+                    ),
+                    child: Stack(
+                      children: [
+                        // Ground line
+                        Positioned(
+                          left: 0,
+                          right: 0,
+                          bottom: 60,
+                          child: Container(
+                            height: 2,
+                            color: IronMonColors.outline.withValues(alpha: 0.4),
+                          ),
+                        ),
+
+                        // Enemy trainer (left side, facing right)
+                        Positioned(
+                          left: 24,
+                          bottom: 70,
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              // Trainer sprite
+                              Container(
+                                width: 80,
+                                height: 100,
+                                decoration: BoxDecoration(
+                                  color: typeColor.withValues(alpha: 0.2),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: typeColor.withValues(alpha: 0.4),
+                                    width: 2,
+                                  ),
+                                ),
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.sports_martial_arts,
+                                      size: 48,
+                                      color: typeColor,
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      gym.displayName,
+                                      style: TextStyle(
+                                        fontFamily: 'PressStart2P',
+                                        fontSize: 6,
+                                        color: typeColor,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        // Player trainer (right side, facing left)
+                        Positioned(
+                          right: 24,
+                          bottom: 70,
+                          child: Container(
+                            width: 80,
+                            height: 100,
+                            decoration: BoxDecoration(
+                              color: IronMonColors.primary.withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: IronMonColors.primary.withValues(alpha: 0.4),
+                                width: 2,
+                              ),
+                            ),
+                            child: const Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.person,
+                                  size: 48,
+                                  color: IronMonColors.primary,
+                                ),
+                                SizedBox(height: 4),
+                                Text(
+                                  'YOU',
+                                  style: TextStyle(
+                                    fontFamily: 'PressStart2P',
+                                    fontSize: 6,
+                                    color: IronMonColors.primary,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+
+                        // Pokeball indicators (enemy team count) - right of enemy trainer
+                        Positioned(
+                          left: 120,
+                          bottom: 65,
+                          child: Row(
+                            children: List.generate(bossCount, (i) {
+                              return Padding(
+                                padding: const EdgeInsets.only(right: 6),
+                                child: Container(
+                                  width: 20,
+                                  height: 20,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: IronMonColors.error,
+                                    border: Border.all(
+                                      color: IronMonColors.onSurface,
+                                      width: 2,
+                                    ),
+                                  ),
+                                  child: Center(
+                                    child: Container(
+                                      width: 6,
+                                      height: 6,
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: IronMonColors.onSurface,
+                                        border: Border.all(
+                                          color: IronMonColors.outline,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              );
+                            }),
+                          ),
+                        ),
+
+                        // VS text in center
+                        Positioned.fill(
+                          child: Center(
+                            child: Text(
+                              'VS',
+                              style: TextStyle(
+                                fontFamily: 'PressStart2P',
+                                fontSize: 32,
+                                color: IronMonColors.secondary.withValues(
+                                  alpha: 0.3,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+                // === Bottom: Text box with typewriter text ===
+                Expanded(
+                  flex: 40,
+                  child: Container(
+                    decoration: const BoxDecoration(
+                      color: IronMonColors.surfaceVariant,
+                      border: Border(
+                        top: BorderSide(
+                          color: IronMonColors.outline,
+                          width: 4,
+                        ),
+                      ),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Typewriter intro text
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: IronMonColors.surface,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: IronMonColors.outline,
+                                width: 3,
+                              ),
+                            ),
+                            child: Text(
+                              visibleText,
+                              style: const TextStyle(
+                                fontFamily: 'PressStart2P',
+                                fontSize: 12,
+                                color: IronMonColors.onSurface,
+                                height: 1.8,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          // Boss lineup preview
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: state.bosses.asMap().entries.map((e) {
+                              final boss = e.value;
+                              final stageLabel = switch (e.key) {
+                                0 => 'Minion',
+                                1 => 'Mid-Boss',
+                                _ => 'Leader',
+                              };
+                              return Expanded(
+                                child: Container(
+                                  margin: const EdgeInsets.symmetric(
+                                    horizontal: 4,
+                                  ),
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: IronMonColors.surface,
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(
+                                      color: IronMonColors.outline,
+                                    ),
+                                  ),
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        boss.type.elementName,
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          color: IronMonColors.colorForType(
+                                            boss.type,
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        stageLabel,
+                                        style: const TextStyle(
+                                          fontFamily: 'PressStart2P',
+                                          fontSize: 7,
+                                          color: IronMonColors.onSurfaceVariant,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                          const Spacer(),
+                          // Tap to continue hint
+                          Center(
+                            child: Text(
+                              _introTextIndex >= introText.length
+                                  ? 'Tap to start!'
+                                  : '',
+                              style: const TextStyle(
+                                fontFamily: 'PressStart2P',
+                                fontSize: 10,
+                                color: IronMonColors.onSurfaceVariant,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
