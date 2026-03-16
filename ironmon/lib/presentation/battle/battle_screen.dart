@@ -14,7 +14,6 @@ import 'package:ironmon/presentation/battle/widgets/damage_display.dart';
 import 'package:ironmon/presentation/battle/widgets/evolution_animation.dart';
 import 'package:ironmon/presentation/battle/widgets/set_input_panel.dart';
 import 'package:ironmon/presentation/battle/widgets/screen_shake.dart';
-import 'package:ironmon/presentation/battle/widgets/phase_transition.dart';
 import 'package:ironmon/domain/training/pr_detector.dart';
 import 'package:ironmon/providers/battle_providers.dart';
 import 'package:ironmon/providers/repository_providers.dart';
@@ -207,19 +206,17 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
                   // == TOP: Battle Scene (55 %) ==
                   Expanded(
                     flex: 55,
-                    child: PhaseTransition(
-                      phaseKey: ValueKey(state.currentBossIndex),
-                      child: _BattleScene(
-                        boss: boss,
-                        phaseLabel: phaseLabel,
-                        playerLevel: playerLevel,
-                        playerHp: state.playerHp,
-                        maxPlayerHp: state.maxPlayerHp,
-                        playerPp: state.playerPp,
-                        maxPlayerPp: state.maxPlayerPp,
-                        completedSets: state.completedSets.length,
-                        lastDamage: lastDamage,
-                      ),
+                    child: _BattleScene(
+                      key: ValueKey(state.currentBossIndex),
+                      boss: boss,
+                      phaseLabel: phaseLabel,
+                      playerLevel: playerLevel,
+                      playerHp: state.playerHp,
+                      maxPlayerHp: state.maxPlayerHp,
+                      playerPp: state.playerPp,
+                      maxPlayerPp: state.maxPlayerPp,
+                      completedSets: state.completedSets.length,
+                      lastDamage: lastDamage,
                     ),
                   ),
 
@@ -761,6 +758,7 @@ class _BattleScreenState extends ConsumerState<BattleScreen> {
 
 class _BattleScene extends StatelessWidget {
   const _BattleScene({
+    super.key,
     required this.boss,
     required this.phaseLabel,
     required this.playerLevel,
